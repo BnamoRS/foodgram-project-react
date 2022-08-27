@@ -7,14 +7,14 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 
 from rest_framework.permissions import IsAuthenticated
 
-from api import serializers
+from api import serializers, paginators
 from recipes import models
 
 
 class UserViewSet(ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = paginators.UserPaginator
 
     def get_serializer_class(self):
         if self.action == 'create':

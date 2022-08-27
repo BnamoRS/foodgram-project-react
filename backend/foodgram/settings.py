@@ -83,12 +83,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
          'rest_framework.authentication.TokenAuthentication',
     ],
-    # 'PAGE_SIZE': 5,
+    'DEFAULT_PAGINATION_CLASS': [
+        'rest_framework.pagination.LimitOffsetPagination'
+    ],
+    'PAGE_SIZE': 5,
 }
 
 SIMPLE_JWT = {

@@ -23,7 +23,7 @@ class UserSerializer(ModelSerializer):
 
 
 class UserCreateSerializer(ModelSerializer):
-    
+
     class Meta:
         model = models.User
         fields = (
@@ -40,7 +40,7 @@ class UserListSerializer(ModelSerializer):
     class Meta:
         model = models.User
         fields = (
-            
+
         )
 
 
