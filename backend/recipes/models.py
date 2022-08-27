@@ -42,17 +42,17 @@ class Recipe(models.Model):
 
 class Tag(models.Model):
     """Теги рецептов."""
-    COLOR_TAG = [
-        ('RED', '#cd5c5c'),
-        ('BLUE', '#0000ff'),
-        ('GREEN', '#008000'),
-    ]
-    name = models.CharField(max_length=64)
-    color = models.CharField(max_length=32) 
+    # COLOR_TAG = [
+    #     ('RED', '#cd5c5c'),
+    #     ('BLUE', '#0000ff'),
+    #     ('GREEN', '#008000'),
+    # ]
+    name = models.CharField(max_length=200)
+    color = models.CharField(max_length=7) 
     # посмотреть как добавить цвет тега в HEX64
     # с цветами создать переменную выбора, в поле выбор из вариантов
     # в переменной цвет и его код.
-    slug = models.SlugField(max_length=64)
+    slug = models.SlugField(max_length=200)
 
 
 class Ingredient(models.Model):

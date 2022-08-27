@@ -44,6 +44,8 @@ class UserListSerializer(ModelSerializer):
         )
 
 
-# class UserMeSerializer(ModelSerializer):
-#     model = models.User
-#     fields = ('email', 'username', 'first_name', 'last_name',)
+class TagSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Tag
+        fields = ('id', 'name', 'color', 'slug')

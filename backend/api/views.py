@@ -29,3 +29,8 @@ class UserViewSet(ModelViewSet):
         me = models.User.objects.get(id=request.user)
         serializer = serializers.UserSerializer(me)
         return Response(serializer.data)
+
+
+class TagViewSet(ReadOnlyModelViewSet):
+    queryset = models.Tag.objects.all()
+    serializer_class = serializers.TagSerializer

@@ -12,4 +12,9 @@ class RecipeAdmin(admin.ModelAdmin):
     empty_value_display = '--пусто--'
 
 
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'color', 'slug')
+
+
 admin.site.register(models.Recipe, RecipeAdmin)
+admin.site.register(models.Tag, TagAdmin)
