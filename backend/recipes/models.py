@@ -47,12 +47,21 @@ class Tag(models.Model):
     #     ('BLUE', '#0000ff'),
     #     ('GREEN', '#008000'),
     # ]
-    name = models.CharField(max_length=200)
-    color = models.CharField(max_length=7) 
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Наименование тега',
+    )
+    color = models.CharField(
+        max_length=7,
+        verbose_name='Цвет в HEX',
+    ) 
     # посмотреть как добавить цвет тега в HEX64
     # с цветами создать переменную выбора, в поле выбор из вариантов
     # в переменной цвет и его код.
-    slug = models.SlugField(max_length=200)
+    slug = models.SlugField(
+        max_length=200,
+        verbose_name='Уникальный слаг',
+    )
 
 
 class Ingredient(models.Model):
@@ -61,18 +70,20 @@ class Ingredient(models.Model):
         
     # ]
     name = models.CharField(
-        max_length=64,
+        max_length=200,
         unique=True,
+        verbose_name='Наименование ингридиента',
     )
     measurement_unit = models.CharField(
-        max_length=2,
+        max_length=200,
+        verbose_name='Единицы измерения',
         # choices=UNITS
     )
 
-    def add_unit(self, unit):
-        """Добавить единицу измерения в список выбора."""
-        # добавить единицу измерения написать
-        pass
+    # def add_unit(self, unit):
+    #     """Добавить единицу измерения в список выбора."""
+    #     # добавить единицу измерения написать
+    #     pass
 
 
 class RecipeIngredient(models.Model):
