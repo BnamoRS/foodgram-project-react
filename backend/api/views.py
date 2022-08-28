@@ -3,11 +3,15 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
+from rest_framework.viewsets import (ReadOnlyModelViewSet,
+                                     ModelViewSet,
+                                     GenericViewSet,
+                                     )
 
 from rest_framework.permissions import IsAuthenticated
 
-from api import serializers, paginators
+from api import paginators, serializers
+from api.viewsets import CreateDestroyListViewSet
 from recipes import models
 
 
@@ -39,3 +43,8 @@ class TagViewSet(ReadOnlyModelViewSet):
 class IngredientViewsSet(ReadOnlyModelViewSet):
     queryset = models.Ingredient.objects.all()
     serializer_class = serializers.IngredientSerializer
+
+
+class SubscriptionViewSet(CreateDestroyListViewSet):
+    queryset = models.Subscription.objects.all()
+    serializer_class = serializers.SubscriptionSerializer

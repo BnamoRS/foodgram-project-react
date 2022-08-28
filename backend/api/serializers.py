@@ -56,3 +56,10 @@ class IngredientSerializer(ModelSerializer):
     class Meta:
         model = models.Ingredient
         fields = ('id', 'name', 'measurement_unit')
+
+
+class SubscriptionSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Subscription
+        fields = '__all__'
