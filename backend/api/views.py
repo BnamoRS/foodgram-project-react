@@ -30,7 +30,7 @@ class UserViewSet(ModelViewSet):
 
     @action(detail=False, url_path='me', permission_classes=[IsAuthenticated])
     def get_me(self, request):
-        me = models.User.objects.get(id=request.user)
+        me = models.User.objects.get(username=request.user)
         serializer = serializers.UserSerializer(me)
         return Response(serializer.data)
 
