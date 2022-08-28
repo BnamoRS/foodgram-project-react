@@ -1,3 +1,4 @@
+from tabnanny import verbose
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -39,6 +40,11 @@ class Recipe(models.Model):
         verbose_name='Тег',
     )
 
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+        ordering = ['-pub_date']
+
 
 class Tag(models.Model):
     """Теги рецептов."""
@@ -63,6 +69,11 @@ class Tag(models.Model):
         verbose_name='Уникальный слаг',
     )
 
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+        ordering = ['name']
+
 
 class Ingredient(models.Model):
     """Таблица ингридиентов."""
@@ -79,6 +90,11 @@ class Ingredient(models.Model):
         verbose_name='Единицы измерения',
         # choices=UNITS
     )
+
+    class Meta:
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
+        ordering = ['name']
 
     # def add_unit(self, unit):
     #     """Добавить единицу измерения в список выбора."""

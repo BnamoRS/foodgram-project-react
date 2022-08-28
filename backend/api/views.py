@@ -34,3 +34,8 @@ class UserViewSet(ModelViewSet):
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = models.Tag.objects.all()
     serializer_class = serializers.TagSerializer
+
+
+class IngredientViewsSet(ReadOnlyModelViewSet):
+    queryset = models.Ingredient.objects.all()
+    serializer_class = serializers.IngredientSerializer

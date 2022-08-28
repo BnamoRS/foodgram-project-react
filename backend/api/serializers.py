@@ -49,3 +49,10 @@ class TagSerializer(ModelSerializer):
     class Meta:
         model = models.Tag
         fields = ('id', 'name', 'color', 'slug')
+
+
+class IngredientSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Ingredient
+        fields = ('id', 'name', 'measurement_unit')
