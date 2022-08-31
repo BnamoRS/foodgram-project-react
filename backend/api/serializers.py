@@ -1,8 +1,14 @@
-from dataclasses import field
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from django.contrib.auth import get_user_model
+from rest_framework.serializers import (
+                                        ModelSerializer,
+                                        SerializerMethodField,
+                                        CharField,
+                                        StringRelatedField
+                                        )
+
 
 from recipes import models
-
+User = get_user_model()
 
 class UserSerializer(ModelSerializer):
     is_subscribed = SerializerMethodField()
@@ -19,11 +25,19 @@ class UserSerializer(ModelSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        return obj.follower.all().exists()
+        # print(obj)
+        request_user = self.context.get('request').user
+        # print(request_user)
+        return obj.following.filter(follower=request_user).exists()
 
 
 class UserCreateSerializer(ModelSerializer):
+    password = CharField(style={"input_type": "password"}, write_only=True)
 
+    def create(self, validated_data):
+        instance = models.User.objects.create_user(**validated_data)
+        return instance
+    
     class Meta:
         model = models.User
         fields = (
@@ -32,15 +46,6 @@ class UserCreateSerializer(ModelSerializer):
             'first_name',
             'last_name',
             'password',
-        )
-
-
-class UserListSerializer(ModelSerializer):
-
-    class Meta:
-        model = models.User
-        fields = (
-
         )
 
 
@@ -59,7 +64,10 @@ class IngredientSerializer(ModelSerializer):
 
 
 class SubscriptionSerializer(ModelSerializer):
+    # follower = StringRelatedField(read_only=True)
+    author = UserSerializer()
+    # id = 
 
     class Meta:
         model = models.Subscription
-        fields = '__all__'
+        fields = ('author',)

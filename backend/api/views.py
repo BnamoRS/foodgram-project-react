@@ -1,7 +1,8 @@
+from django.contrib.auth import get_user_model
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import (ReadOnlyModelViewSet,
                                      ModelViewSet,
@@ -15,6 +16,9 @@ from api.viewsets import CreateDestroyListViewSet
 from recipes import models
 
 
+User = get_user_model()
+
+
 class UserViewSet(ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
@@ -23,9 +27,6 @@ class UserViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create':
             return serializers.UserCreateSerializer
-        # elif self.action == 'list':
-        #     pass
-
         return serializers.UserSerializer
 
     @action(detail=False, url_path='me', permission_classes=[IsAuthenticated])
@@ -48,3 +49,12 @@ class IngredientViewsSet(ReadOnlyModelViewSet):
 class SubscriptionViewSet(CreateDestroyListViewSet):
     queryset = models.Subscription.objects.all()
     serializer_class = serializers.SubscriptionSerializer
+    pagination_class = paginators.SubscriptionPaginator
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+
+        return self.request.user.follower.all()
+
+    def perform_create(self, serializer):
+        serializer.save(follower=self.request.user)

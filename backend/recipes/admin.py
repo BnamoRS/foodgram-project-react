@@ -20,6 +20,11 @@ class IngredientsAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit')
 
 
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('follower', 'author')
+
+
 admin.site.register(models.Recipe, RecipeAdmin)
 admin.site.register(models.Tag, TagAdmin)
 admin.site.register(models.Ingredient, IngredientsAdmin)
+admin.site.register(models.Subscription, SubscriptionAdmin)

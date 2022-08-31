@@ -6,8 +6,8 @@ User = get_user_model()
 
 
 class UserAdmin(admin.ModelAdmin):
-    # list_display = '__all__'
-    pass
+    list_display = (
+        'id', 'username', 'password', 'email', 'first_name', 'last_name')
 
 
 admin.site.register(User, UserAdmin)
