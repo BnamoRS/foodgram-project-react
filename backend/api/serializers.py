@@ -64,9 +64,7 @@ class IngredientSerializer(ModelSerializer):
 
 
 class SubscriptionSerializer(ModelSerializer):
-    # follower = StringRelatedField(read_only=True)
-    author = UserSerializer()
-    # id = 
+    author = UserSerializer(read_only=True)
 
     class Meta:
         model = models.Subscription

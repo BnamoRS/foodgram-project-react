@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
@@ -35,6 +35,21 @@ class UserViewSet(ModelViewSet):
         serializer = serializers.UserSerializer(me)
         return Response(serializer.data)
 
+    @action(
+        methods=['post'],
+        detail=True,
+        url_path='subscribe',
+        permission_classes=[IsAuthenticated]
+    )
+    def add_subscribe(self, request, pk):
+        author = get_object_or_404(User, id=pk)
+        models.Subscription.objects.create(
+            author=author, follower=self.request.user)
+        print(author)
+        serializer = serializers.UserSerializer(author)
+        print(serializer.data)
+        return Response(serializer.data)
+
 
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = models.Tag.objects.all()
@@ -53,8 +68,4 @@ class SubscriptionViewSet(CreateDestroyListViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         return self.request.user.follower.all()
-
-    def perform_create(self, serializer):
-        serializer.save(follower=self.request.user)
