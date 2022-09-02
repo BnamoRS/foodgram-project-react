@@ -20,13 +20,16 @@ class Recipe(models.Model):
     )
     image = models.ImageField(verbose_name='Фото рецепта')
     name = models.CharField(
+        null=True,
         max_length=200,
         verbose_name='Название рецепта',
     )
     text = models.TextField(
         verbose_name='Описание рецепта',
     )
-    cooking_time = models.TimeField(verbose_name='Время приготовления, мин')
+    cooking_time = models.PositiveIntegerField(
+        verbose_name='Время приготовления, мин',
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата публикации'
@@ -47,11 +50,6 @@ class Recipe(models.Model):
 
 class Tag(models.Model):
     """Теги рецептов."""
-    # COLOR_TAG = [
-    #     ('RED', '#cd5c5c'),
-    #     ('BLUE', '#0000ff'),
-    #     ('GREEN', '#008000'),
-    # ]
     name = models.CharField(
         max_length=200,
         verbose_name='Наименование тега',
@@ -59,10 +57,7 @@ class Tag(models.Model):
     color = models.CharField(
         max_length=7,
         verbose_name='Цвет в HEX',
-    ) 
-    # посмотреть как добавить цвет тега в HEX64
-    # с цветами создать переменную выбора, в поле выбор из вариантов
-    # в переменной цвет и его код.
+    )
     slug = models.SlugField(
         max_length=200,
         verbose_name='Уникальный слаг',
@@ -113,11 +108,14 @@ class RecipeIngredient(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         related_name='recipe_ingredients',
+        verbose_name='Рецепт',
     )
-    amount = models.PositiveIntegerField()
+    amount = models.PositiveIntegerField(verbose_name='количество')
     # сделать уникальным в пределах таблицы
 
     class Meta:
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
         constraints = [
             models.UniqueConstraint(
                 fields=['ingredient', 'recipe'],
@@ -138,8 +136,13 @@ class RecipeTag(models.Model):
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='recipe_tags'
+        related_name='recipe_tags',
+        verbose_name='Тег',
     )
+
+    class Meta:
+        verbose_name = 'Тег рецепта'
+        verbose_name_plural = 'Теги рецепта'
 
 
 class Subscription(models.Model):

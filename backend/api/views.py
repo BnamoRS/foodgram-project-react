@@ -81,3 +81,10 @@ class SubscriptionViewSet(CreateDestroyListViewSet):
 
     def get_queryset(self):
         return self.request.user.follower.all()
+
+
+class RecipeViewSet(ModelViewSet):
+    queryset = models.Recipe.objects.all()
+    serializer_class = serializers.RecipeSerializer
+    # pagination_class = None
+    # permission_classes = None

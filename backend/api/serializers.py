@@ -84,4 +84,15 @@ class SubscriptionSerializer(ModelSerializer):
         fields = ('author',)
 
 
+class RecipeSerializer(ModelSerializer):
 
+    class Meta:
+        model = models.Recipe
+        fields = (
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time',
+        )
