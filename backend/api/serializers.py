@@ -10,6 +10,19 @@ from rest_framework.serializers import (
 from recipes import models
 User = get_user_model()
 
+
+# class BaseUserSerializer(ModelSerializer):
+
+#     class Meta:
+#         model = models.User
+#         fields = (
+#             'email',
+#             'username',
+#             'first_name',
+#             'last_name',
+#         )
+
+
 class UserSerializer(ModelSerializer):
     is_subscribed = SerializerMethodField()
 
@@ -25,7 +38,7 @@ class UserSerializer(ModelSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        # print(obj)
+        # print(self)
         request_user = self.context.get('request').user
         # print(request_user)
         return obj.following.filter(follower=request_user).exists()
@@ -69,3 +82,6 @@ class SubscriptionSerializer(ModelSerializer):
     class Meta:
         model = models.Subscription
         fields = ('author',)
+
+
+

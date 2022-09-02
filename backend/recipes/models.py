@@ -8,37 +8,36 @@ User = get_user_model()
 
 class Recipe(models.Model):
     """Рецепты."""
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='recipes',
-        verbose_name='Автор рецепта',
-    )
-    name = models.CharField(
-        max_length=64,
-        verbose_name='Название рецепта',
-    )
-    image = models.ImageField(verbose_name='Фото рецепта')
-    description = models.TextField(
-        max_length=200,
-        verbose_name='Описание рецепта',
-    )
-    # как реализовать выбор из предустановленных для поля
     ingredients = models.ManyToManyField(
         'Ingredient',
         through='RecipeIngredient',
         verbose_name=' Ингридиенты',
-    )
-    cooking_time = models.TimeField(verbose_name='Время приготовления, мин')
-    pub_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата публикации'
     )
     tag = models.ManyToManyField(
         'Tag',
         through='RecipeTag',
         verbose_name='Тег',
     )
+    image = models.ImageField(verbose_name='Фото рецепта')
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Название рецепта',
+    )
+    text = models.TextField(
+        verbose_name='Описание рецепта',
+    )
+    cooking_time = models.TimeField(verbose_name='Время приготовления, мин')
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='recipes',
+        verbose_name='Автор рецепта',
+    )
+    # как реализовать выбор из предустановленных для поля
 
     class Meta:
         verbose_name = 'Рецепт'

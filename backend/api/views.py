@@ -32,23 +32,35 @@ class UserViewSet(ModelViewSet):
     @action(detail=False, url_path='me', permission_classes=[IsAuthenticated])
     def get_me(self, request):
         me = models.User.objects.get(username=request.user)
-        serializer = serializers.UserSerializer(me)
+        serializer = serializers.UserSerializer(me, context={'request': request})
         return Response(serializer.data)
 
     @action(
-        methods=['post'],
+        methods=['post', 'delete'],
         detail=True,
         url_path='subscribe',
         permission_classes=[IsAuthenticated]
     )
     def add_subscribe(self, request, pk):
-        author = get_object_or_404(User, id=pk)
-        models.Subscription.objects.create(
-            author=author, follower=self.request.user)
-        print(author)
-        serializer = serializers.UserSerializer(author)
-        print(serializer.data)
-        return Response(serializer.data)
+        if request.method == 'POST':
+            author = get_object_or_404(User, id=pk)
+            models.Subscription.objects.create(
+                author=author, follower=self.request.user)
+            serializer = serializers.UserSerializer(
+                author, context={'request': request})
+            return Response(serializer.data)
+        models.Subscription.objects.filter(
+            author=pk, follower=self.request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # @action(
+    #     methods=['delete'],
+    #     detail=True,
+    #     url_path='subscribe',
+    #     permission_classes=[IsAuthenticated]
+    # )
+    # def delete_subscribe(self, request, pk):
+    #     pass
 
 
 class TagViewSet(ReadOnlyModelViewSet):
