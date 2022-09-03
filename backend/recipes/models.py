@@ -12,13 +12,18 @@ class Recipe(models.Model):
         'Ingredient',
         through='RecipeIngredient',
         verbose_name=' Ингридиенты',
-    )
+        )
     tag = models.ManyToManyField(
         'Tag',
         through='RecipeTag',
         verbose_name='Тег',
-    )
-    image = models.ImageField(verbose_name='Фото рецепта')
+        )
+    image = models.ImageField(
+        upload_to='recipe/images/',
+        null=True,
+        default=None,
+        verbose_name='Фото рецепта',
+        )
     name = models.CharField(
         null=True,
         max_length=200,
@@ -68,6 +73,9 @@ class Tag(models.Model):
         verbose_name_plural = 'Теги'
         ordering = ['name']
 
+    def __str__(self):
+        return self.name
+
 
 class Ingredient(models.Model):
     """Таблица ингридиентов."""
@@ -84,6 +92,9 @@ class Ingredient(models.Model):
         verbose_name='Единицы измерения',
         # choices=UNITS
     )
+
+    def __str__(self):
+        return f'{self.name}, {self.measurement_unit}'
 
     class Meta:
         verbose_name = 'Ингредиент'
