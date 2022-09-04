@@ -88,3 +88,9 @@ class RecipeViewSet(ModelViewSet):
     serializer_class = serializers.RecipeSerializer
     # pagination_class = None
     # permission_classes = None
+
+    # def get_serializer_class(self):
+    #     print(self.action)
+    #     if self.action == 'list' or 'retrieve':
+    #         return serializers.RecipeSerializer
+    #     return serializers.RecipeCreateUpdateSerializer
