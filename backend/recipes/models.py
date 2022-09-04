@@ -185,4 +185,13 @@ class Favorite(models.Model):
         on_delete=models.CASCADE,
         related_name='favorite_recipes',
     )
-    # сделать связку пользователь рецепт уникальной
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite'
+            )
+        ]
