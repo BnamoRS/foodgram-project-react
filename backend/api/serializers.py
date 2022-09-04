@@ -10,6 +10,7 @@ from rest_framework.serializers import (
                                         ModelSerializer,
                                         SerializerMethodField,
                                         CharField,
+                                        ListField,
                                         PrimaryKeyRelatedField,
                                         StringRelatedField,
                                         ImageField,
@@ -118,24 +119,23 @@ class SubscriptionSerializer(ModelSerializer):
         fields = ('author',)
 
 
-class RecipeIngredientSerializer(ModelSerializer):
-    # ingredient = IngredientSerializer(read_only=True)
+# class RecipeIngredientSerializer(ModelSerializer):
+#     # ingredient = IngredientSerializer(read_only=True)
 
-    class Meta:
-        model = models.RecipeIngredient
-        fields = ('amount',)
+#     class Meta:
+#         model = models.RecipeIngredient
+#         fields = ('amount',)
         
 
-    # def get_alternate_name(self, obj):
-    #     return obj.ingredient
+#     # def get_alternate_name(self, obj):
+#     #     return obj.ingredient
 
 
-class RecipeTagSerializer(ModelSerializer):
-    # tag = TagSerializer(many=True)
-
-    class Meta:
-        model = models.RecipeTag
-        fields = ('tag',)
+# class TagCreateRecipeSerializer(Serializer):
+#     tags = IntegerField()
+#     # class Meta:
+#     #     model = models.RecipeTag
+#     #     fields = ('tags',)
 
 
 class Base64ImageField(ImageField):
@@ -152,7 +152,7 @@ class RecipeSerializer(ModelSerializer):
     ingredients = IngredientSerializer(
         many=True)
     tags = TagSerializer(many=True)
-    author = UserSerializer()
+    author = UserSerializer(read_only=True)
 
     class Meta:
         model = models.Recipe
@@ -167,74 +167,60 @@ class RecipeSerializer(ModelSerializer):
             'cooking_time',
         )
 
+    # def to_internal_value(self, data):
+        
+    #     print(data)
+    #     return super().to_internal_value(data)
 
-# class RecipeCreateUpdateSerializer(ModelSerializer):
-#     image = Base64ImageField(required=False, allow_null=True)
-#     # tags = PrimaryKeyRelatedField(
-#     #     queryset=models.Tag.objects.all(), many=True)
-#     ingredients = IngredientCreateRecipeSerializer(
-#         many=True)
-#     # is_favorited = SerializerMethodField()
-#     # is_in_shoping_cart = SerializerMethodField()
+    # def to_representation(self, instance):
+    #     return super().to_representation(instance)
 
-#     class Meta:
-#         model = models.Recipe
-#         fields = (
-#             # 'id',
-#             # 'tags',
-#             # 'author',
-#             'ingredients',
-#             # 'is_favorited',
-#             # 'is_in_shopping_cart',
-#             'name',
-#             'image',
-#             'text',
-#             'cooking_time',
-#         )
-#         # read_only_fields = (
-#         #     # 'id',
-#         #     # 'author',
-#         #     'is_favorited',
-#         #     'is_in_shopping_cart',
-#         # )
-
-#     # def get_is_favorited(self, obj):
-#     #     print(obj)
-#     #     return True
+    # def create(self, validated_data):
+    #     print(validated_data)
 
 
-#     def create(self, validated_data):
-#         author = self.context.get('request').user
-#     #     print(validated_data)
-#         ingredients = validated_data.pop('ingredients')
-#         print(ingredients)
-#         # tags = validated_data.pop('tags')
-#         # print(tags)
-#         recipe = models.Recipe.objects.create(**validated_data, author=author)
-#         for ingredient in ingredients:
-#             # current_ingredient = models.Ingredient.objects.get_or_create(
-#             #     **ingredient
-#             # )
-#             id_ingredient = ingredient.get('id')
-#             print(id_ingredient)
-#             # if not models.Ingredient.objects.filter(id=id_ingredient).exists():
-#             #     raise exceptions.ParseError(detail='Игредиент не найден.')
-#             ingredient_obj = get_object_or_404(models.Ingredient, id=id_ingredient)
-#             print(ingredient_obj)
-#             amount_ingredient = ingredient.get('amount')
-#             print(type(amount_ingredient))
-#             # Вставить проверку на наличие ингредиента в базе
-#             recipe_ingredient = models.RecipeIngredient.objects.create(
-#                 recipe=recipe,
-#                 ingredient=ingredient_obj,
-#                 amount=amount_ingredient,
-#             )
-#             print(recipe_ingredient)
-#         # for tag in tags:
-#         #     current_tag = models.Tag.objects.get_or_create(
-#         #         **tag
-#         #     )
-#         #     models.RecipeTag.objects.create(
-#         #         recipe=recipe, tag=current_tag
-#         #     )
-#         return recipe
+class RecipeCreateUpdateSerializer(ModelSerializer):
+    image = Base64ImageField(required=False, allow_null=True)
+    tags = ListField(child=IntegerField(),)
+    ingredients = IngredientCreateRecipeSerializer(
+        many=True)
+
+    class Meta:
+        model = models.Recipe
+        fields = (
+            'ingredients',
+            'tags',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+        )
+
+    def to_representation(self, instance):
+        custom_request = self.context.get('request')
+        representation = RecipeSerializer(
+            instance, context={'request': custom_request})
+        return representation.data
+
+    def create(self, validated_data):
+        author = self.context.get('request').user
+        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
+        recipe = models.Recipe.objects.create(**validated_data, author=author)
+        for ingredient in ingredients:
+            id_ingredient = ingredient.get('id')
+            if not models.Ingredient.objects.filter(id=id_ingredient).exists():
+                raise exceptions.ParseError(detail='Игредиент не найден.')
+            ingredient_obj = models.Ingredient.objects.get(id=id_ingredient)
+            amount_ingredient = ingredient.get('amount')
+            models.RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=ingredient_obj,
+                amount=amount_ingredient,
+            )
+        # for tag in tags:
+        #     if not models.Tag.objects.filter(id=tag).exists():
+        #         raise exceptions.ParseError(detail='Тег не найден.')
+        #     current_tag = models.Tag.objects.get(id=tag)
+        #     models.RecipeTag.objects.create(recipe=recipe, tag=current_tag)
+        return recipe
