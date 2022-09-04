@@ -91,11 +91,14 @@ class TagSerializer(ModelSerializer):
 
 class IngredientSerializer(ModelSerializer):
     # recipe_ingredients = IngredientAmountField(many=False)
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['amount'] = models.RecipeIngredient.objects.get(
-            ingredient=instance).amount
-        return representation
+
+    # РЕШИТЬ ПРОБЛЕМУ С AMOUNT
+
+    # def to_representation(self, instance):
+    #     representation = super().to_representation(instance)
+    #     representation['amount'] = models.RecipeIngredient.objects.get(
+    #         ingredient=instance).amount
+    #     return representation
 
     class Meta:
         model = models.Ingredient
@@ -218,9 +221,9 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
                 ingredient=ingredient_obj,
                 amount=amount_ingredient,
             )
-        # for tag in tags:
-        #     if not models.Tag.objects.filter(id=tag).exists():
-        #         raise exceptions.ParseError(detail='Тег не найден.')
-        #     current_tag = models.Tag.objects.get(id=tag)
-        #     models.RecipeTag.objects.create(recipe=recipe, tag=current_tag)
+        for tag in tags:
+            if not models.Tag.objects.filter(id=tag).exists():
+                raise exceptions.ParseError(detail='Тег не найден.')
+            current_tag = models.Tag.objects.get(id=tag)
+            models.RecipeTag.objects.create(recipe=recipe, tag=current_tag)
         return recipe
