@@ -227,3 +227,20 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
             current_tag = models.Tag.objects.get(id=tag)
             models.RecipeTag.objects.create(recipe=recipe, tag=current_tag)
         return recipe
+
+
+class FavoriteSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Favorite
+        fields = ('user', 'recipe')
+
+    def create(self, validated_data):
+        user = validated_data['user']
+        recipe = validated_data['recipe']
+        if models.Favorite.objects.filter(user=user, recipe=recipe).exists():
+            raise exceptions.ParseError(detail='Рецепт уже в подписке.')
+        favorite = models.Favorite.objects.create(
+            user=user,
+            recipe=recipe)
+        return favorite
