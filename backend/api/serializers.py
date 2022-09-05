@@ -94,11 +94,12 @@ class IngredientSerializer(ModelSerializer):
 
     # РЕШИТЬ ПРОБЛЕМУ С AMOUNT
 
-    # def to_representation(self, instance):
-    #     representation = super().to_representation(instance)
-    #     representation['amount'] = models.RecipeIngredient.objects.get(
-    #         ingredient=instance).amount
-    #     return representation
+    def to_representation(self, instance):
+        print(instance)
+        representation = super().to_representation(instance)
+        # representation['amount'] = models.RecipeIngredient.objects.get(
+        #     ingredient=instance).amount
+        return representation
 
     class Meta:
         model = models.Ingredient
@@ -122,12 +123,12 @@ class SubscriptionSerializer(ModelSerializer):
         fields = ('author',)
 
 
-# class RecipeIngredientSerializer(ModelSerializer):
-#     # ingredient = IngredientSerializer(read_only=True)
+class RecipeIngredientSerializer(ModelSerializer):
+    # ingredient = IngredientSerializer(read_only=True)
 
-#     class Meta:
-#         model = models.RecipeIngredient
-#         fields = ('amount',)
+    class Meta:
+        model = models.RecipeIngredient
+        fields = ('amount', 'recipe', 'ingredient')
         
 
 #     # def get_alternate_name(self, obj):
@@ -151,6 +152,7 @@ class Base64ImageField(ImageField):
 
 
 class RecipeSerializer(ModelSerializer):
+    recipe_ingredients = RecipeIngredientSerializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
     ingredients = IngredientSerializer(
         many=True)
@@ -168,7 +170,13 @@ class RecipeSerializer(ModelSerializer):
             'name',
             'text',
             'cooking_time',
+            'recipe_ingredients'
         )
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        print(super().to_representation(instance))
+        return super().to_representation(instance)
 
     # def to_internal_value(self, data):
         
@@ -244,3 +252,7 @@ class FavoriteSerializer(ModelSerializer):
             user=user,
             recipe=recipe)
         return favorite
+
+
+class ChoppingCartSerializer(ModelSerializer):
+    pass

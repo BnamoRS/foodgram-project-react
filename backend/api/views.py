@@ -75,7 +75,7 @@ class SubscriptionViewSet(CreateDestroyListViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
-    queryset = models.Recipe.objects.all()
+    queryset = models.Recipe.objects.prefetch_related('recipe_ingredients')
     serializer_class = serializers.RecipeSerializer
     # pagination_class = None
     # permission_classes = None
@@ -93,6 +93,37 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk):
+        id_recipe = request.data.get('id')
+        user = request.user
+        if request.method == 'POST':
+            serializer = serializers.FavoriteSerializer(
+                data={'user': user.id, 'recipe': id_recipe}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    serializer.data, status=status.HTTP_201_CREATED)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not models.Favorite.objects.filter(
+            user=user.id, recipe=id_recipe).exists():
+            return Response(
+                {'errors': 'Рецепт отсутствует в подписке.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        models.Favorite.objects.filter(user=user.id, recipe=id_recipe).delete()
+        return Response(
+            {'detail': 'Рецепт удалён из подписки.'},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+    
+    @action(
+        methods=['post', 'delete'],
+        detail=True,
+        url_path='shopping_cart',
+        permission_classes=[IsAuthenticated]
+    )
+    def shopping_cart(self, request, pk):
         id_recipe = request.data.get('id')
         user = request.user
         if request.method == 'POST':

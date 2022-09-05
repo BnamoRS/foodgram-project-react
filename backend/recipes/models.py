@@ -79,9 +79,6 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     """Таблица ингридиентов."""
-    # UNITS = [
-        
-    # ]
     name = models.CharField(
         max_length=200,
         unique=True,
@@ -90,7 +87,6 @@ class Ingredient(models.Model):
     measurement_unit = models.CharField(
         max_length=200,
         verbose_name='Единицы измерения',
-        # choices=UNITS
     )
 
     def __str__(self):
@@ -100,11 +96,6 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ['name']
-
-    # def add_unit(self, unit):
-    #     """Добавить единицу измерения в список выбора."""
-    #     # добавить единицу измерения написать
-    #     pass
 
 
 class RecipeIngredient(models.Model):
@@ -122,7 +113,6 @@ class RecipeIngredient(models.Model):
         verbose_name='Рецепт',
     )
     amount = models.PositiveIntegerField(verbose_name='количество')
-    # сделать уникальным в пределах таблицы
 
     class Meta:
         verbose_name = 'Ингредиент'
@@ -193,5 +183,28 @@ class Favorite(models.Model):
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
                 name='unique_favorite'
+            )
+        ]
+
+
+class ShoppingCart(models.Model):
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='shopping_cart_recipes',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='shopping_cart_users',
+    )
+
+    class Meta:
+        verbose_name = 'Покупка'
+        verbose_name_plural = 'Покупки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_shopping_cart'
             )
         ]
