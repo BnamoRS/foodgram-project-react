@@ -190,6 +190,13 @@ class RecipeSerializer(ModelSerializer):
     #     print(validated_data)
 
 
+class FavoriteShoppingCartRecipeSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
 class RecipeCreateUpdateSerializer(ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     tags = ListField(child=IntegerField(),)
@@ -253,6 +260,32 @@ class FavoriteSerializer(ModelSerializer):
             recipe=recipe)
         return favorite
 
+    def to_representation(self, instance):
+        representation = FavoriteShoppingCartRecipeSerializer(instance.recipe)
+        return representation.data
 
-class ChoppingCartSerializer(ModelSerializer):
-    pass
+
+class ShoppingCartSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.ShoppingCart
+        fields = ('user', 'recipe')
+
+    def create(self, validated_data):
+        user = validated_data['user']
+        recipe = validated_data['recipe']
+        if models.ShoppingCart.objects.filter(
+            user=user, recipe=recipe).exists():
+            raise exceptions.ParseError(
+                detail='Рецепт уже добавлен в список покупок.')
+        favorite = models.ShoppingCart.objects.create(
+            user=user,
+            recipe=recipe)
+        return favorite
+
+    def to_representation(self, instance):
+        representation = FavoriteShoppingCartRecipeSerializer(instance.recipe)
+        return representation.data
+        # return super().to_representation(instance)
+
+

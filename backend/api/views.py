@@ -127,7 +127,7 @@ class RecipeViewSet(ModelViewSet):
         id_recipe = request.data.get('id')
         user = request.user
         if request.method == 'POST':
-            serializer = serializers.FavoriteSerializer(
+            serializer = serializers.ShoppingCartSerializer(
                 data={'user': user.id, 'recipe': id_recipe}
             )
             if serializer.is_valid():
@@ -136,14 +136,15 @@ class RecipeViewSet(ModelViewSet):
                     serializer.data, status=status.HTTP_201_CREATED)
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if not models.Favorite.objects.filter(
+        if not models.ShoppingCart.objects.filter(
             user=user.id, recipe=id_recipe).exists():
             return Response(
-                {'errors': 'Рецепт отсутствует в подписке.'},
+                {'errors': 'Рецепт отсутствует в списке покупок.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        models.Favorite.objects.filter(user=user.id, recipe=id_recipe).delete()
+        models.ShoppingCart.objects.filter(
+            user=user.id, recipe=id_recipe).delete()
         return Response(
-            {'detail': 'Рецепт удалён из подписки.'},
+            {'detail': 'Рецепт удалён из списка покупок.'},
             status=status.HTTP_204_NO_CONTENT,
         )
