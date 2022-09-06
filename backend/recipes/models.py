@@ -1,4 +1,3 @@
-from tabnanny import verbose
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -95,7 +94,7 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        ordering = ['name']
+        ordering = ['id']
 
 
 class RecipeIngredient(models.Model):

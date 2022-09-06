@@ -75,16 +75,17 @@ class SubscriptionViewSet(CreateDestroyListViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
-    queryset = models.Recipe.objects.prefetch_related('recipe_ingredients')
-    serializer_class = serializers.RecipeSerializer
+    queryset = models.Recipe.objects.prefetch_related(
+        'recipe_ingredients__ingredient')
+    # serializer_class = serializers.RecipeSerializer
     # pagination_class = None
     # permission_classes = None
 
-    # def get_serializer_class(self):
-    #     print(self.action)
-    #     if self.action == 'list' or 'retrieve':
-    #         return serializers.RecipeSerializer
-    #     return serializers.RecipeCreateUpdateSerializer
+    def get_serializer_class(self):
+        print(self.action)
+        if self.action == 'list' or self.action == 'retrieve':
+            return serializers.RecipeSerializer
+        return serializers.RecipeCreateUpdateSerializer
 
     @action(
         methods=['post', 'delete'],
@@ -105,8 +106,10 @@ class RecipeViewSet(ModelViewSet):
                     serializer.data, status=status.HTTP_201_CREATED)
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if not models.Favorite.objects.filter(
-            user=user.id, recipe=id_recipe).exists():
+        if (
+            not models.Favorite.objects.filter(
+                user=user.id, recipe=id_recipe).exists()
+        ):
             return Response(
                 {'errors': 'Рецепт отсутствует в подписке.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -116,7 +119,7 @@ class RecipeViewSet(ModelViewSet):
             {'detail': 'Рецепт удалён из подписки.'},
             status=status.HTTP_204_NO_CONTENT,
         )
-    
+
     @action(
         methods=['post', 'delete'],
         detail=True,
@@ -136,8 +139,10 @@ class RecipeViewSet(ModelViewSet):
                     serializer.data, status=status.HTTP_201_CREATED)
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if not models.ShoppingCart.objects.filter(
-            user=user.id, recipe=id_recipe).exists():
+        if (
+            not models.ShoppingCart.objects.filter(
+                user=user.id, recipe=id_recipe).exists()
+        ):
             return Response(
                 {'errors': 'Рецепт отсутствует в списке покупок.'},
                 status=status.HTTP_400_BAD_REQUEST,
