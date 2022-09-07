@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
@@ -8,9 +9,13 @@ from rest_framework.viewsets import (ReadOnlyModelViewSet,
                                      ModelViewSet,
                                      )
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly,
+                                        SAFE_METHODS
+                                        )
 
 from api import paginators, serializers
+from api.permissions import IsAuthor
 from api.viewsets import CreateDestroyListViewSet
 from recipes import models
 
@@ -21,7 +26,7 @@ User = get_user_model()
 class UserViewSet(ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
-    pagination_class = paginators.UserPaginator
+    pagination_class = paginators.CustomPageNumberPaginator
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -34,6 +39,24 @@ class UserViewSet(ModelViewSet):
         serializer = serializers.UserSerializer(
             me, context={'request': request})
         return Response(serializer.data)
+
+    @action(
+        methods=['post'],
+        detail=False,
+        url_path='set_password',
+        permission_classes=[IsAuthenticated]
+    )
+    def set_password(self, request):
+        user = models.User.objects.get(username=request.user)
+        self.check_object_permissions(request, user)
+        serializer = serializers.SetPasswordSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {'detail': 'Пароль успешно изменен.'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         methods=['post', 'delete'],
@@ -79,13 +102,19 @@ class RecipeViewSet(ModelViewSet):
         'recipe_ingredients__ingredient')
     # serializer_class = serializers.RecipeSerializer
     # pagination_class = None
-    # permission_classes = None
 
     def get_serializer_class(self):
-        print(self.action)
+        # print(self.action)
         if self.action == 'list' or self.action == 'retrieve':
             return serializers.RecipeSerializer
         return serializers.RecipeCreateUpdateSerializer
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        else:
+            permission_classes = [IsAuthor]
+        return [permission() for permission in permission_classes]
 
     @action(
         methods=['post', 'delete'],
@@ -153,3 +182,20 @@ class RecipeViewSet(ModelViewSet):
             {'detail': 'Рецепт удалён из списка покупок.'},
             status=status.HTTP_204_NO_CONTENT,
         )
+
+    @action(detail=False, permission_classes=[IsAuthenticated])
+    def download_shoping_cart(self, request):
+        ingredients = models.Ingredient.objects.filter(
+            recipe_ingredients__recipe_id__shopping_cart_recipes__user=request.user.id
+        ).prefetch_related('ingredients').annotate(
+            amount=Sum('recipe_ingredients__amount'))
+        recipes = models.Recipe.objects.filter(
+            shopping_cart_recipes__user=request.user.id).prefetch_related(
+                'recipe_ingredients__ingredient')
+        # ingredients = models.Recipe.objects.filter(
+        #     id__in=recipes)
+        # ingredients_ingr = ingredients.recipe_ingredients.all()
+        print(ingredients.values())
+        serializer = serializers.RecipeSerializer(
+            recipes, many=True, context={'request': request})
+        return Response(serializer.data)

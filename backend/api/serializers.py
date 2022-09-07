@@ -12,9 +12,10 @@ from rest_framework.serializers import (
                                         IntegerField,
                                         )
 from rest_framework import exceptions
-
+# from api import recipes
 
 from recipes import models
+
 User = get_user_model()
 
 
@@ -37,6 +38,26 @@ class UserSerializer(ModelSerializer):
         return obj.following.filter(follower=request_user).exists()
 
 
+class SetPasswordSerializer(ModelSerializer):
+    current_password = CharField(style={"input_type": "password"})
+    new_password = CharField(style={"input_type": "password"})
+
+    class Meta:
+        model = models.User
+        fields = ('current_password', 'new_password')
+        write_only_fields = ('current_password', 'new_password')
+
+    def update(self, instance, validated_data):
+        current_password = validated_data.get('current_password')
+        new_password = validated_data.get('new_password')
+        if not instance.check_password(current_password):
+            raise exceptions.AuthenticationFailed(
+                detail='Старый пароль не совпадает.')
+        instance.set_password(new_password)
+        instance.save()
+        return instance
+
+
 class UserCreateSerializer(ModelSerializer):
     password = CharField(style={"input_type": "password"}, write_only=True)
 
@@ -48,6 +69,7 @@ class UserCreateSerializer(ModelSerializer):
         model = models.User
         fields = (
             'email',
+            'id',
             'username',
             'first_name',
             'last_name',
@@ -184,6 +206,44 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
             models.RecipeTag.objects.create(recipe=recipe, tag=current_tag)
         return recipe
 
+    def update(self, instance, validated_data):
+        # author = self.context.get('request').user
+        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
+        instance.image = validated_data.get('image', instance.image)
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time)
+        instance.save()
+        for ingredient in ingredients:
+            id_ingredient = ingredient.get('id')
+            if not models.Ingredient.objects.filter(id=id_ingredient).exists():
+                raise exceptions.ParseError(detail='Игредиент не найден.')
+            elif (
+                not models.RecipeIngredient.objects.filter(
+                    ingredient=id_ingredient, recipe=instance.id).exists()
+            ):
+                ingredient_obj = models.Ingredient.objects.get(
+                    id=id_ingredient)
+                amount_ingredient = ingredient.get('amount')
+                models.RecipeIngredient.objects.create(
+                    recipe=instance,
+                    ingredient=ingredient_obj,
+                    amount=amount_ingredient,
+                )
+        for tag in tags:
+            if not models.Tag.objects.filter(id=tag).exists():
+                raise exceptions.ParseError(detail='Тег не найден.')
+            elif (
+                not models.RecipeTag.objects.filter(
+                    recipe=instance, tag=tag).exists()
+            ):
+                current_tag = models.Tag.objects.get(id=tag)
+                models.RecipeTag.objects.create(
+                    recipe=instance, tag=current_tag)
+        return instance
+
 
 class FavoriteSerializer(ModelSerializer):
 
@@ -229,3 +289,14 @@ class ShoppingCartSerializer(ModelSerializer):
     def to_representation(self, instance):
         representation = FavoriteShoppingCartRecipeSerializer(instance.recipe)
         return representation.data
+
+
+class ShoppingCartIngredientsSerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Recipe
+        fields = '__all__'
+
+    def to_internal_value(self, data):
+        print(data)
+        return super().to_internal_value(data)
