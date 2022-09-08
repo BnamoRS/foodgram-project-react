@@ -1,4 +1,6 @@
 import base64
+from email.policy import default
+from urllib import request
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
@@ -10,6 +12,7 @@ from rest_framework.serializers import (
                                         ListField,
                                         ImageField,
                                         IntegerField,
+                                        ValidationError,
                                         )
 from rest_framework import exceptions
 # from api import recipes
@@ -33,9 +36,22 @@ class UserSerializer(ModelSerializer):
             'is_subscribed',
         )
 
+    # def get_fields(self):
+    #     return super().get_fields()
+
+    def to_representation(self, instance):
+        request_user = self.context.get('request').user
+        if request_user.is_authenticated:
+            return super().to_representation(instance)
+        representation = super().to_representation(instance)
+        representation.pop('is_subscribed')
+        return representation
+
     def get_is_subscribed(self, obj):
         request_user = self.context.get('request').user
-        return obj.following.filter(follower=request_user).exists()
+        if request_user.is_authenticated:
+            return obj.following.filter(follower=request_user).exists()
+        return False
 
 
 class SetPasswordSerializer(ModelSerializer):
@@ -138,6 +154,8 @@ class RecipeSerializer(ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     tags = TagSerializer(many=True)
     author = UserSerializer(read_only=True)
+    is_favorited = SerializerMethodField()
+    is_in_shopping_cart = SerializerMethodField()
 
     class Meta:
         model = models.Recipe
@@ -146,11 +164,45 @@ class RecipeSerializer(ModelSerializer):
             'tags',
             'author',
             'ingredients',
+            'is_favorited',
+            'is_in_shopping_cart',
             'image',
             'name',
             'text',
             'cooking_time',
         )
+
+    def get_is_favorited(self, obj):
+        request_user = self.context.get('request').user
+        if request_user.is_authenticated:
+            return models.Favorite.objects.filter(
+                user=request_user, recipe=obj).exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        request_user = self.context.get('request').user
+        if request_user.is_authenticated:
+            return models.ShoppingCart.objects.filter(
+                user=request_user, recipe=obj).exists()
+
+    def to_representation(self, instance):
+        if self.context.get('request').user.is_authenticated:
+            return super().to_representation(instance)
+        representation = super().to_representation(instance)
+        representation.pop('is_favorited')
+        representation.pop('is_in_shopping_cart')
+        return representation
+
+
+class RecipeDestroySerializer(ModelSerializer):
+
+    class Meta:
+        model = models.Recipe
+        fields = ('id',)
+
+#     def validate_id(self, value):
+#         if not models.Recipe.objects.filter(id=value).exists():
+#             raise ValidationError(f'Пост с id {value} не найден')
+#         return value
 
 
 class FavoriteShoppingCartRecipeSerializer(ModelSerializer):

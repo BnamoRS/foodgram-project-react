@@ -107,7 +107,10 @@ class RecipeViewSet(ModelViewSet):
         # print(self.action)
         if self.action == 'list' or self.action == 'retrieve':
             return serializers.RecipeSerializer
-        return serializers.RecipeCreateUpdateSerializer
+        elif self.action == 'destroy':
+            return serializers.RecipeDestroySerializer
+        else:
+            return serializers.RecipeCreateUpdateSerializer
 
     def get_permissions(self):
         if self.request.method in SAFE_METHODS:
@@ -115,6 +118,17 @@ class RecipeViewSet(ModelViewSet):
         else:
             permission_classes = [IsAuthor]
         return [permission() for permission in permission_classes]
+
+    def destroy(self, request, pk):
+        serializer = serializers.RecipeDestroySerializer(
+            data=request.data)
+        print(request.data)
+        if serializer.is_valid():
+            recipe_id = serializer.validated_data.get('id')
+            models.Recipe.objects.get(id=recipe_id).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+        # return super().destroy(request, *args, **kwargs)
 
     @action(
         methods=['post', 'delete'],
