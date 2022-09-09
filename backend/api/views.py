@@ -1,8 +1,10 @@
+from tkinter.messagebox import NO
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.decorators import action
+from rest_framework import filters, status
+from rest_framework.decorators import action, renderer_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import (ReadOnlyModelViewSet,
@@ -14,13 +16,21 @@ from rest_framework.permissions import (IsAuthenticated,
                                         SAFE_METHODS
                                         )
 
-from api import paginators, serializers
+from api import paginators, serializers, renderers
 from api.permissions import IsAuthor
 from api.viewsets import CreateDestroyListViewSet
 from recipes import models
 
 
 User = get_user_model()
+
+
+def check_id(request, pk):
+    id = request.data.get('id')
+    print(id)
+    if id is None or id != pk:
+        return False
+    return True
 
 
 class UserViewSet(ModelViewSet):
@@ -81,16 +91,34 @@ class TagViewSet(ReadOnlyModelViewSet):
     queryset = models.Tag.objects.all()
     serializer_class = serializers.TagSerializer
 
+    def retrieve(self, request, pk):
+        if check_id(request, pk):
+            return super().retrieve(self, request)
+        return Response(
+                {'detail': 'Неверный id'},
+                status=status.HTTP_404_NOT_FOUND
+                )
+
 
 class IngredientViewsSet(ReadOnlyModelViewSet):
     queryset = models.Ingredient.objects.all()
     serializer_class = serializers.IngredientSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+    def retrieve(self, request, pk):
+        if check_id(request, pk):
+            return super().retrieve(self, request)
+        return Response(
+                {'detail': 'Неверный id'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class SubscriptionViewSet(CreateDestroyListViewSet):
     queryset = models.Subscription.objects.all()
     serializer_class = serializers.SubscriptionSerializer
-    pagination_class = paginators.SubscriptionPaginator
+    pagination_class = paginators.CustomPageNumberPaginator
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -120,15 +148,12 @@ class RecipeViewSet(ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def destroy(self, request, pk):
-        serializer = serializers.RecipeDestroySerializer(
-            data=request.data)
-        print(request.data)
-        if serializer.is_valid():
-            recipe_id = serializer.validated_data.get('id')
-            models.Recipe.objects.get(id=recipe_id).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
-        # return super().destroy(request, *args, **kwargs)
+        if check_id(request, pk):
+            return super().destroy(self, request)
+        return Response(
+                {'detail': 'Неверный id'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     @action(
         methods=['post', 'delete'],
@@ -170,46 +195,54 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk):
-        id_recipe = request.data.get('id')
-        user = request.user
-        if request.method == 'POST':
-            serializer = serializers.ShoppingCartSerializer(
-                data={'user': user.id, 'recipe': id_recipe}
-            )
-            if serializer.is_valid():
-                serializer.save()
+        if check_id(request, pk):
+            id_recipe = request.data.get('id')
+            user = request.user
+            if request.method == 'POST':
+                serializer = serializers.ShoppingCartSerializer(
+                    data={'user': user.id, 'recipe': id_recipe}
+                )
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(
+                        serializer.data, status=status.HTTP_201_CREATED)
                 return Response(
-                    serializer.data, status=status.HTTP_201_CREATED)
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if (
+                not models.ShoppingCart.objects.filter(
+                    user=user.id, recipe=id_recipe).exists()
+            ):
+                return Response(
+                    {'errors': 'Рецепт отсутствует в списке покупок.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            models.ShoppingCart.objects.filter(
+                user=user.id, recipe=id_recipe).delete()
             return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if (
-            not models.ShoppingCart.objects.filter(
-                user=user.id, recipe=id_recipe).exists()
-        ):
-            return Response(
-                {'errors': 'Рецепт отсутствует в списке покупок.'},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'detail': 'Рецепт удалён из списка покупок.'},
+                status=status.HTTP_204_NO_CONTENT,
             )
-        models.ShoppingCart.objects.filter(
-            user=user.id, recipe=id_recipe).delete()
         return Response(
-            {'detail': 'Рецепт удалён из списка покупок.'},
-            status=status.HTTP_204_NO_CONTENT,
+                {'detail': 'Неверный id'},
+                status=status.HTTP_404_NOT_FOUND
         )
 
-    @action(detail=False, permission_classes=[IsAuthenticated])
+    @action(detail=False)
     def download_shoping_cart(self, request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        user_id = request.user.id
         ingredients = models.Ingredient.objects.filter(
-            recipe_ingredients__recipe_id__shopping_cart_recipes__user=request.user.id
-        ).prefetch_related('ingredients').annotate(
-            amount=Sum('recipe_ingredients__amount'))
-        recipes = models.Recipe.objects.filter(
-            shopping_cart_recipes__user=request.user.id).prefetch_related(
-                'recipe_ingredients__ingredient')
-        # ingredients = models.Recipe.objects.filter(
-        #     id__in=recipes)
-        # ingredients_ingr = ingredients.recipe_ingredients.all()
-        print(ingredients.values())
-        serializer = serializers.RecipeSerializer(
-            recipes, many=True, context={'request': request})
-        return Response(serializer.data)
+            recipe_ingredients__recipe_id__shopping_cart_recipes__user=user_id
+        ).prefetch_related('recipe_ingredients').annotate(
+            sum_amount=Sum('recipe_ingredients__amount'))
+        serializer = serializers.ShoppingCartDownloadSerializer(
+            ingredients, many=True)
+        content = '***СПИСОК ПОКУПОК.***\n\n'
+        for val in serializer.data:
+            content += '* {}: {} {}\n'.format(
+                val['name'], val['amount'], val['measurement_unit'])
+        return HttpResponse(
+            content=content,
+            content_type='text/plain'
+        )

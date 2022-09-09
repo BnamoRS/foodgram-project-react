@@ -1,8 +1,5 @@
 import base64
-from email.policy import default
-from urllib import request
 
-from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from rest_framework.serializers import (
                                         Serializer,
@@ -12,14 +9,10 @@ from rest_framework.serializers import (
                                         ListField,
                                         ImageField,
                                         IntegerField,
-                                        ValidationError,
                                         )
 from rest_framework import exceptions
-# from api import recipes
 
 from recipes import models
-
-User = get_user_model()
 
 
 class UserSerializer(ModelSerializer):
@@ -35,9 +28,6 @@ class UserSerializer(ModelSerializer):
             'last_name',
             'is_subscribed',
         )
-
-    # def get_fields(self):
-    #     return super().get_fields()
 
     def to_representation(self, instance):
         request_user = self.context.get('request').user
@@ -193,18 +183,6 @@ class RecipeSerializer(ModelSerializer):
         return representation
 
 
-class RecipeDestroySerializer(ModelSerializer):
-
-    class Meta:
-        model = models.Recipe
-        fields = ('id',)
-
-#     def validate_id(self, value):
-#         if not models.Recipe.objects.filter(id=value).exists():
-#             raise ValidationError(f'Пост с id {value} не найден')
-#         return value
-
-
 class FavoriteShoppingCartRecipeSerializer(ModelSerializer):
 
     class Meta:
@@ -343,12 +321,9 @@ class ShoppingCartSerializer(ModelSerializer):
         return representation.data
 
 
-class ShoppingCartIngredientsSerializer(ModelSerializer):
+class ShoppingCartDownloadSerializer(ModelSerializer):
+    amount = IntegerField(source='sum_amount')
 
     class Meta:
-        model = models.Recipe
-        fields = '__all__'
-
-    def to_internal_value(self, data):
-        print(data)
-        return super().to_internal_value(data)
+        model = models.Ingredient
+        fields = ('name', 'amount', 'measurement_unit')
