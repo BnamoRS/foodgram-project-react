@@ -14,7 +14,6 @@ from rest_framework.permissions import (IsAuthenticated,
 
 from api import paginators, serializers
 from api.permissions import IsAuthor
-from api.viewsets import CreateDestroyListViewSet
 from recipes import models
 
 
@@ -29,7 +28,7 @@ class UserViewSet(ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     pagination_class = paginators.CustomPageNumberPaginator
-    ermission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -62,20 +61,27 @@ class UserViewSet(ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
-        # methods=['post', 'delete'],
         detail=False,
-        permission_classes=[IsAuthenticated]
+        permission_classes=[IsAuthenticated],
     )
     def subscriptions(self, request):
         queryset = models.User.objects.filter(
             following__follower=request.user.id).prefetch_related(
                 'recipes').annotate(
                     recipes_count=Count('recipes'))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = serializers.SubscriptionSerializer(
+                page,
+                context={'request': request},
+                many=True,
+            )
+            return self.get_paginated_response(serializer.data)
         serializer = serializers.SubscriptionSerializer(
-            queryset,
-            context={'request': request},
-            many=True,
-        )
+                page,
+                context={'request': request},
+                many=True,
+            )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
@@ -113,13 +119,13 @@ class TagViewSet(ReadOnlyModelViewSet):
     queryset = models.Tag.objects.all()
     serializer_class = serializers.TagSerializer
 
-    def retrieve(self, request, pk):
-        if check_id(request, pk):
-            return super().retrieve(self, request)
-        return Response(
-                {'detail': 'Неверный id'},
-                status=status.HTTP_404_NOT_FOUND
-                )
+    # def retrieve(self, request, pk):
+    #     if check_id(request, pk):
+    #         return super().retrieve(self, request)
+    #     return Response(
+    #             {'detail': 'Неверный id'},
+    #             status=status.HTTP_404_NOT_FOUND
+    #             )
 
 
 class IngredientViewsSet(ReadOnlyModelViewSet):
@@ -128,23 +134,13 @@ class IngredientViewsSet(ReadOnlyModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
-    def retrieve(self, request, pk):
-        if check_id(request, pk):
-            return super().retrieve(self, request)
-        return Response(
-                {'detail': 'Неверный id'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-
-# class SubscriptionViewSet(CreateDestroyListViewSet):
-#     queryset = models.Subscription.objects.all()
-#     serializer_class = serializers.SubscriptionSerializer
-#     pagination_class = paginators.CustomPageNumberPaginator
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         return self.request.user.follower.all()
+    # def retrieve(self, request, pk):
+    #     if check_id(request, pk):
+    #         return super().retrieve(self, request)
+    #     return Response(
+    #             {'detail': 'Неверный id'},
+    #             status=status.HTTP_404_NOT_FOUND
+    #         )
 
 
 class RecipeViewSet(ModelViewSet):
@@ -166,13 +162,13 @@ class RecipeViewSet(ModelViewSet):
             permission_classes = [IsAuthor]
         return [permission() for permission in permission_classes]
 
-    def destroy(self, request, pk):
-        if check_id(request, pk):
-            return super().destroy(self, request)
-        return Response(
-                {'detail': 'Неверный id'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+    # def destroy(self, request, pk):
+    #     if check_id(request, pk):
+    #         return super().destroy(self, request)
+    #     return Response(
+    #             {'detail': 'Неверный id'},
+    #             status=status.HTTP_404_NOT_FOUND
+    #         )
 
     @action(
         methods=['post', 'delete'],

@@ -197,14 +197,12 @@ class RecipeSubscriptionSerializer(ModelSerializer):
 
 
 class SubscriptionSerializer(ModelSerializer):
-    # author = UserSerializer(read_only=True)
     recipes_count = IntegerField()
     recipes = RecipeSubscriptionSerializer(many=True)
     is_subscribed = SerializerMethodField()
 
     class Meta:
         model = models.User
-        # fields = ('author', 'recipes_count')
         fields = (
             'email',
             'id',
