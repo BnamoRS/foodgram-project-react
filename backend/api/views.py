@@ -1,33 +1,25 @@
-from tkinter.messagebox import NO
-from django.contrib.auth import get_user_model
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
 from rest_framework import filters, status
-from rest_framework.decorators import action, renderer_classes
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import (ReadOnlyModelViewSet,
+from rest_framework.viewsets import (
                                      ModelViewSet,
+                                     ReadOnlyModelViewSet,
                                      )
-
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly,
                                         SAFE_METHODS
                                         )
 
-from api import paginators, serializers, renderers
+from api import paginators, serializers
 from api.permissions import IsAuthor
 from api.viewsets import CreateDestroyListViewSet
 from recipes import models
 
 
-User = get_user_model()
-
-
 def check_id(request, pk):
     id = request.data.get('id')
-    print(id)
     if id is None or id != pk:
         return False
     return True
@@ -37,6 +29,7 @@ class UserViewSet(ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     pagination_class = paginators.CustomPageNumberPaginator
+    ermission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -69,19 +62,48 @@ class UserViewSet(ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
-        methods=['post', 'delete'],
-        detail=True,
-        url_path='subscribe',
+        # methods=['post', 'delete'],
+        detail=False,
         permission_classes=[IsAuthenticated]
     )
-    def add_subscribe(self, request, pk):
+    def subscriptions(self, request):
+        queryset = models.User.objects.filter(
+            following__follower=request.user.id).prefetch_related(
+                'recipes').annotate(
+                    recipes_count=Count('recipes'))
+        serializer = serializers.SubscriptionSerializer(
+            queryset,
+            context={'request': request},
+            many=True,
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        methods=['post', 'delete'],
+        detail=True,
+        permission_classes=[IsAuthenticated]
+    )
+    def subscribe(self, request, pk):
         if request.method == 'POST':
-            author = get_object_or_404(User, id=pk)
-            models.Subscription.objects.create(
-                author=author, follower=self.request.user)
-            serializer = serializers.UserSerializer(
-                author, context={'request': request})
-            return Response(serializer.data)
+            if request.user.id == int(pk):
+                return Response(
+                    {'errors': 'Подписка на себя невозможна.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            elif (models.Subscription.objects.filter(
+                author=pk, follower=self.request.user).exists()
+            ):
+                return Response(
+                    {'errors': 'Подписка уже существует.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                author = models.User.objects.get(id=pk)
+                models.Subscription.objects.create(
+                    author=author, follower=self.request.user)
+                serializer = serializers.UserSerializer(
+                    author, context={'request': request})
+                return Response(serializer.data)
         models.Subscription.objects.filter(
             author=pk, follower=self.request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -115,24 +137,21 @@ class IngredientViewsSet(ReadOnlyModelViewSet):
             )
 
 
-class SubscriptionViewSet(CreateDestroyListViewSet):
-    queryset = models.Subscription.objects.all()
-    serializer_class = serializers.SubscriptionSerializer
-    pagination_class = paginators.CustomPageNumberPaginator
-    permission_classes = [IsAuthenticated]
+# class SubscriptionViewSet(CreateDestroyListViewSet):
+#     queryset = models.Subscription.objects.all()
+#     serializer_class = serializers.SubscriptionSerializer
+#     pagination_class = paginators.CustomPageNumberPaginator
+#     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return self.request.user.follower.all()
+#     def get_queryset(self):
+#         return self.request.user.follower.all()
 
 
 class RecipeViewSet(ModelViewSet):
     queryset = models.Recipe.objects.prefetch_related(
         'recipe_ingredients__ingredient')
-    # serializer_class = serializers.RecipeSerializer
-    # pagination_class = None
 
     def get_serializer_class(self):
-        # print(self.action)
         if self.action == 'list' or self.action == 'retrieve':
             return serializers.RecipeSerializer
         elif self.action == 'destroy':
@@ -228,7 +247,7 @@ class RecipeViewSet(ModelViewSet):
         )
 
     @action(detail=False)
-    def download_shoping_cart(self, request):
+    def download_shopping_cart(self, request):
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         user_id = request.user.id

@@ -101,18 +101,6 @@ class IngredientCreateRecipeSerializer(Serializer):
     amount = IntegerField()
     id = IntegerField()
 
-    # class Meta:
-    #     # model = models.Ingredient
-    #     fields = ('id', 'amount')
-
-
-class SubscriptionSerializer(ModelSerializer):
-    author = UserSerializer(read_only=True)
-
-    class Meta:
-        model = models.Subscription
-        fields = ('author',)
-
 
 class RecipeIngredientSerializer(ModelSerializer):
     ingredient = IngredientSerializer(read_only=True)
@@ -183,6 +171,55 @@ class RecipeSerializer(ModelSerializer):
         return representation
 
 
+class RecipeSubscriptionSerializer(ModelSerializer):
+    # ingredients = RecipeIngredientSerializer(
+    #     source='recipe_ingredients', many=True)
+    # image = Base64ImageField(required=False, allow_null=True)
+    # tags = TagSerializer(many=True)
+    # author = UserSerializer(read_only=True)
+    # is_favorited = SerializerMethodField()
+    # is_in_shopping_cart = SerializerMethodField()
+
+    class Meta:
+        model = models.Recipe
+        fields = (
+            'id',
+            # 'tags',
+            # 'author',
+            # 'ingredients',
+            # 'is_favorited',
+            # 'is_in_shopping_cart',
+            'name',
+            'image',
+            # 'text',
+            'cooking_time',
+        )
+
+
+class SubscriptionSerializer(ModelSerializer):
+    # author = UserSerializer(read_only=True)
+    recipes_count = IntegerField()
+    recipes = RecipeSubscriptionSerializer(many=True)
+    is_subscribed = SerializerMethodField()
+
+    class Meta:
+        model = models.User
+        # fields = ('author', 'recipes_count')
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count',
+        )
+
+    def get_is_subscribed(self, obj):
+        return UserSerializer.get_is_subscribed(self, obj)
+
+
 class FavoriteShoppingCartRecipeSerializer(ModelSerializer):
 
     class Meta:
@@ -237,7 +274,6 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        # author = self.context.get('request').user
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         instance.image = validated_data.get('image', instance.image)

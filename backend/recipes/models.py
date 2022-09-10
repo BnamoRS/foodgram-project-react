@@ -44,7 +44,6 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Автор рецепта',
     )
-    # как реализовать выбор из предустановленных для поля
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -104,7 +103,7 @@ class RecipeIngredient(models.Model):
     """Таблица связи рецептов с ингридиентами."""
     ingredient = models.ForeignKey(
         Ingredient,
-        on_delete=models.PROTECT, # решить как удалять
+        on_delete=models.PROTECT,
         related_name='recipe_ingredients',
         verbose_name='Ингредиент',
     )
@@ -162,7 +161,16 @@ class Subscription(models.Model):
         related_name='following',
         verbose_name='Автор рецепта'
     )
-    # Подписку сделать уникальной для пары пользователей
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['follower', 'author'],
+                name='unique_subscription'
+            )
+        ]
 
 
 class Favorite(models.Model):

@@ -16,7 +16,6 @@ class IngredientInLine(admin.TabularInline):
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    # model = models.Recipe
     inlines = (RecipeTagInLine, IngredientInLine)
     list_display = (
         'id', 'name', 'text', 'author', 'cooking_time', 'pub_date'
@@ -27,7 +26,7 @@ class RecipeAdmin(admin.ModelAdmin):
     search_field = ('name', 'tag', 'author')
     list_filter = ('author', 'name', 'tags__name')
     empty_value_display = '--пусто--'
-    
+
 
 class TagAdmin(admin.ModelAdmin):
     inlines = (RecipeTagInLine,)
@@ -37,7 +36,6 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    # model = models.Ingredient
     inlines = (IngredientInLine,)
     list_display = ('id', 'name', 'measurement_unit')
     search_fields = ('name',)
