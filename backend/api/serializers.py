@@ -172,26 +172,13 @@ class RecipeSerializer(ModelSerializer):
 
 
 class RecipeSubscriptionSerializer(ModelSerializer):
-    # ingredients = RecipeIngredientSerializer(
-    #     source='recipe_ingredients', many=True)
-    # image = Base64ImageField(required=False, allow_null=True)
-    # tags = TagSerializer(many=True)
-    # author = UserSerializer(read_only=True)
-    # is_favorited = SerializerMethodField()
-    # is_in_shopping_cart = SerializerMethodField()
 
     class Meta:
         model = models.Recipe
         fields = (
             'id',
-            # 'tags',
-            # 'author',
-            # 'ingredients',
-            # 'is_favorited',
-            # 'is_in_shopping_cart',
             'name',
             'image',
-            # 'text',
             'cooking_time',
         )
 
@@ -216,6 +203,14 @@ class SubscriptionSerializer(ModelSerializer):
 
     def get_is_subscribed(self, obj):
         return UserSerializer.get_is_subscribed(self, obj)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        recipes = representation.pop('recipes')
+        recipes_limit = self.context.get('request').query_params.get(
+            'recipes_limit')
+        representation['recipes'] = recipes[:int(recipes_limit)]
+        return representation
 
 
 class FavoriteShoppingCartRecipeSerializer(ModelSerializer):
