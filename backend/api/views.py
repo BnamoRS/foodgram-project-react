@@ -135,12 +135,7 @@ class RecipeViewSet(ModelViewSet):
         'recipe_ingredients__ingredient')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    # filterset_fields = (
-    #     'is_favorited',
-    #     'is_in_shopping_cart',
-    #     'author',
-    #     'tags__slug'
-    # )
+    pagination_class = paginators.CustomPageNumberPaginator
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
