@@ -206,9 +206,11 @@ class SubscriptionSerializer(ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        recipes = representation.pop('recipes')
         recipes_limit = self.context.get('request').query_params.get(
             'recipes_limit')
+        if recipes_limit is None:
+            return representation
+        recipes = representation.pop('recipes')
         representation['recipes'] = recipes[:int(recipes_limit)]
         return representation
 

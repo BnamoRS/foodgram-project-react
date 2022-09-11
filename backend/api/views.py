@@ -1,5 +1,6 @@
 from django.db.models import Count, Sum
 from django.http import HttpResponse
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -13,6 +14,7 @@ from rest_framework.permissions import (IsAuthenticated,
                                         )
 
 from api import paginators, serializers
+from api.filters import RecipeFilter
 from api.permissions import IsAuthor
 from recipes import models
 
@@ -90,6 +92,7 @@ class UserViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, pk):
+        #  запрос
         if request.method == 'POST':
             if request.user.id == int(pk):
                 return Response(
@@ -119,14 +122,6 @@ class TagViewSet(ReadOnlyModelViewSet):
     queryset = models.Tag.objects.all()
     serializer_class = serializers.TagSerializer
 
-    # def retrieve(self, request, pk):
-    #     if check_id(request, pk):
-    #         return super().retrieve(self, request)
-    #     return Response(
-    #             {'detail': 'Неверный id'},
-    #             status=status.HTTP_404_NOT_FOUND
-    #             )
-
 
 class IngredientViewsSet(ReadOnlyModelViewSet):
     queryset = models.Ingredient.objects.all()
@@ -134,18 +129,18 @@ class IngredientViewsSet(ReadOnlyModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
-    # def retrieve(self, request, pk):
-    #     if check_id(request, pk):
-    #         return super().retrieve(self, request)
-    #     return Response(
-    #             {'detail': 'Неверный id'},
-    #             status=status.HTTP_404_NOT_FOUND
-    #         )
-
 
 class RecipeViewSet(ModelViewSet):
     queryset = models.Recipe.objects.prefetch_related(
         'recipe_ingredients__ingredient')
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
+    # filterset_fields = (
+    #     'is_favorited',
+    #     'is_in_shopping_cart',
+    #     'author',
+    #     'tags__slug'
+    # )
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
@@ -162,14 +157,6 @@ class RecipeViewSet(ModelViewSet):
             permission_classes = [IsAuthor]
         return [permission() for permission in permission_classes]
 
-    # def destroy(self, request, pk):
-    #     if check_id(request, pk):
-    #         return super().destroy(self, request)
-    #     return Response(
-    #             {'detail': 'Неверный id'},
-    #             status=status.HTTP_404_NOT_FOUND
-    #         )
-
     @action(
         methods=['post', 'delete'],
         detail=True,
@@ -177,31 +164,34 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk):
-        id_recipe = request.data.get('id')
-        user = request.user
-        if request.method == 'POST':
-            serializer = serializers.FavoriteSerializer(
-                data={'user': user.id, 'recipe': id_recipe}
-            )
-            if serializer.is_valid():
-                serializer.save()
+        if models.Recipe.objects.filter(id=pk).exists():
+            if request.method == 'POST':
+                serializer = serializers.FavoriteSerializer(
+                    data={'user': request.user.id, 'recipe': pk}
+                )
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(
+                        serializer.data, status=status.HTTP_201_CREATED)
                 return Response(
-                    serializer.data, status=status.HTTP_201_CREATED)
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if (
+                not models.Favorite.objects.filter(
+                    user=request.user.id, recipe=pk).exists()
+            ):
+                return Response(
+                    {'errors': 'Рецепт отсутствует в подписке.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            models.Favorite.objects.filter(user=request.user, recipe=pk).delete()
             return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if (
-            not models.Favorite.objects.filter(
-                user=user.id, recipe=id_recipe).exists()
-        ):
-            return Response(
-                {'errors': 'Рецепт отсутствует в подписке.'},
+                {'detail': 'Рецепт удалён из подписки.'},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        return Response(
+                {'detail': 'Рецепт не найден.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        models.Favorite.objects.filter(user=user.id, recipe=id_recipe).delete()
-        return Response(
-            {'detail': 'Рецепт удалён из подписки.'},
-            status=status.HTTP_204_NO_CONTENT,
-        )
 
     @action(
         methods=['post', 'delete'],
