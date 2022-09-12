@@ -306,50 +306,50 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
         return instance
 
 
-class FavoriteSerializer(ModelSerializer):
+# class FavoriteSerializer(ModelSerializer):
 
-    class Meta:
-        model = models.Favorite
-        fields = ('user', 'recipe')
+#     class Meta:
+#         model = models.Favorite
+#         fields = ('user', 'recipe')
 
-    def create(self, validated_data):
-        user = validated_data['user']
-        recipe = validated_data['recipe']
-        if models.Favorite.objects.filter(user=user, recipe=recipe).exists():
-            raise exceptions.ParseError(detail='Рецепт уже в подписке.')
-        favorite = models.Favorite.objects.create(
-            user=user,
-            recipe=recipe)
-        return favorite
+#     def create(self, validated_data):
+#         user = validated_data['user']
+#         recipe = validated_data['recipe']
+#         if models.Favorite.objects.filter(user=user, recipe=recipe).exists():
+#             raise exceptions.ParseError(detail='Рецепт уже в подписке.')
+#         favorite = models.Favorite.objects.create(
+#             user=user,
+#             recipe=recipe)
+#         return favorite
 
-    def to_representation(self, instance):
-        representation = FavoriteShoppingCartRecipeSerializer(instance.recipe)
-        return representation.data
+#     def to_representation(self, instance):
+#         representation = FavoriteShoppingCartRecipeSerializer(instance.recipe)
+#         return representation.data
 
 
-class ShoppingCartSerializer(ModelSerializer):
+# class ShoppingCartSerializer(ModelSerializer):
 
-    class Meta:
-        model = models.ShoppingCart
-        fields = ('user', 'recipe')
+#     class Meta:
+#         model = models.ShoppingCart
+#         fields = ('user', 'recipe')
 
-    def create(self, validated_data):
-        user = validated_data['user']
-        recipe = validated_data['recipe']
-        if (
-            models.ShoppingCart.objects.filter(
-                user=user, recipe=recipe).exists()
-        ):
-            raise exceptions.ParseError(
-                detail='Рецепт уже добавлен в список покупок.')
-        favorite = models.ShoppingCart.objects.create(
-            user=user,
-            recipe=recipe)
-        return favorite
+    # def create(self, validated_data):
+    #     user = validated_data['user']
+    #     recipe = validated_data['recipe']
+    #     if (
+    #         models.ShoppingCart.objects.filter(
+    #             user=user, recipe=recipe).exists()
+    #     ):
+    #         raise exceptions.ParseError(
+    #             detail='Рецепт уже добавлен в список покупок.')
+    #     favorite = models.ShoppingCart.objects.create(
+    #         user=user,
+    #         recipe=recipe)
+    #     return favorite
 
-    def to_representation(self, instance):
-        representation = FavoriteShoppingCartRecipeSerializer(instance.recipe)
-        return representation.data
+    # def to_representation(self, instance):
+    #     representation = FavoriteShoppingCartRecipeSerializer(instance.recipe)
+    #     return representation.data
 
 
 class ShoppingCartDownloadSerializer(ModelSerializer):
