@@ -1,4 +1,3 @@
-import re
 from django.db.models import Count, Sum
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
@@ -18,13 +17,6 @@ from api import paginators, serializers
 from api.filters import RecipeFilter
 from api.permissions import IsAuthor
 from recipes import models
-
-
-def check_id(request, pk):
-    id = request.data.get('id')
-    if id is None or id != pk:
-        return False
-    return True
 
 
 class UserViewSet(ModelViewSet):
@@ -148,18 +140,20 @@ class RecipeViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     pagination_class = paginators.CustomPageNumberPaginator
-    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
             return serializers.RecipeSerializer
-        elif self.action == 'destroy':
-            return serializers.RecipeDestroySerializer
-        else:
-            return serializers.RecipeCreateUpdateSerializer
+        return serializers.RecipeCreateUpdateSerializer
 
     def get_permissions(self):
-        if self.request.method in SAFE_METHODS:
+        if (
+            self.action == 'favorite' or
+            self.action == 'shopping_cart' or
+            self.action == 'download_shopping_cart'
+        ):
+            permission_classes = [IsAuthenticated]
+        elif self.request.method in SAFE_METHODS:
             permission_classes = [IsAuthenticatedOrReadOnly]
         else:
             permission_classes = [IsAuthor]
@@ -168,75 +162,33 @@ class RecipeViewSet(ModelViewSet):
     @action(
         methods=['post', 'delete'],
         detail=True,
-        
-        # permission_classes=[IsAuthenticated]
+        permission_classes=[IsAuthenticated]
     )
-    # перелопатить
     def favorite(self, request, pk):
-        if request.user.is_authenticated:
-            if (
+        if (
+            models.Favorite.objects.filter(
+                recipe=pk, user=self.request.user).exists()
+        ):
+            if request.method == 'DELETE':
                 models.Favorite.objects.filter(
-                    recipe=pk, user=self.request.user).exists()
-            ):
-                if request.method == 'DELETE':
-                    models.Favorite.objects.filter(
-                        recipe=pk, user=self.request.user).delete()
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-                return Response(
-                    {'errors': 'Рецепт уже в избранном.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            # elif request.user.id == int(pk):
-            #     return Response(
-            #         {'errors': 'Подписка на себя невозможна.'},
-            #         status=status.HTTP_400_BAD_REQUEST
-                # )
-            if models.Recipe.objects.filter(id=pk).exists():
-                recipe = models.Recipe.objects.get(id=pk)
-                models.Favorite.objects.create(
-                    recipe=recipe, user=self.request.user)
-                serializer = serializers.FavoriteShoppingCartRecipeSerializer(
-                    recipe, context={'request': request})
-                return Response(
-                    serializer.data, status=status.HTTP_201_CREATED)
+                    recipe=pk, user=self.request.user).delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                {'detail': 'Рецепт не существует.'},
+                {'errors': 'Рецепт уже в избранном.'},
                 status=status.HTTP_400_BAD_REQUEST
-                )
-        return Response(
-            {'detail': 'Пользователь не авторизован.'},
-            status=status.HTTP_401_UNAUTHORIZED
             )
-
-        # if models.Recipe.objects.filter(id=pk).exists():
-        #     if request.method == 'POST':
-        #         serializer = serializers.FavoriteSerializer(
-        #             data={'user': request.user.id, 'recipe': pk}
-        #         )
-        #         if serializer.is_valid():
-        #             serializer.save()
-        #             return Response(
-        #                 serializer.data, status=status.HTTP_201_CREATED)
-        #         return Response(
-        #             serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        #     if (
-        #         not models.Favorite.objects.filter(
-        #             user=request.user.id, recipe=pk).exists()
-        #     ):
-        #         return Response(
-        #             {'errors': 'Рецепт отсутствует в подписке.'},
-        #             status=status.HTTP_400_BAD_REQUEST,
-        #         )
-        #     models.Favorite.objects.filter(
-        #         user=request.user, recipe=pk).delete()
-        #     return Response(
-        #         {'detail': 'Рецепт удалён из подписки.'},
-        #         status=status.HTTP_204_NO_CONTENT,
-        #     )
-        # return Response(
-        #         {'detail': 'Рецепт не найден.'},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
+        if models.Recipe.objects.filter(id=pk).exists():
+            recipe = models.Recipe.objects.get(id=pk)
+            models.Favorite.objects.create(
+                recipe=recipe, user=self.request.user)
+            serializer = serializers.FavoriteShoppingCartRecipeSerializer(
+                recipe, context={'request': request})
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            {'detail': 'Рецепт не существует.'},
+            status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(
         methods=['post', 'delete'],
@@ -244,74 +196,35 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk):
-        if request.user.is_authenticated:
-            if (
+        if (
+            models.ShoppingCart.objects.filter(
+                recipe=pk, user=self.request.user).exists()
+        ):
+            if request.method == 'DELETE':
                 models.ShoppingCart.objects.filter(
-                    recipe=pk, user=self.request.user).exists()
-            ):
-                if request.method == 'DELETE':
-                    models.ShoppingCart.objects.filter(
-                        recipe=pk, user=self.request.user).delete()
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-                return Response(
-                    {'errors': 'Рецепт уже в покупках.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            # elif request.user.id == int(pk):
-            #     return Response(
-            #         {'errors': 'Подписка на себя невозможна.'},
-            #         status=status.HTTP_400_BAD_REQUEST
-                # )
-            if models.Recipe.objects.filter(id=pk).exists():
-                recipe = models.Recipe.objects.get(id=pk)
-                models.ShoppingCart.objects.create(
-                    recipe=recipe, user=self.request.user)
-                serializer = serializers.FavoriteShoppingCartRecipeSerializer(
-                    recipe, context={'request': request})
-                return Response(
-                    serializer.data, status=status.HTTP_201_CREATED)
+                    recipe=pk, user=self.request.user).delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                {'detail': 'Рецепт не существует.'},
+                {'errors': 'Рецепт уже в покупках.'},
                 status=status.HTTP_400_BAD_REQUEST
-                )
+            )
+        if models.Recipe.objects.filter(id=pk).exists():
+            recipe = models.Recipe.objects.get(id=pk)
+            models.ShoppingCart.objects.create(
+                recipe=recipe, user=self.request.user)
+            serializer = serializers.FavoriteShoppingCartRecipeSerializer(
+                recipe, context={'request': request})
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED)
         return Response(
-            {'detail': 'Пользователь не авторизован.'},
-            status=status.HTTP_401_UNAUTHORIZED
+            {'detail': 'Рецепт не существует.'},
+            status=status.HTTP_400_BAD_REQUEST
             )
 
-        # if check_id(request, pk):
-        #     id_recipe = request.data.get('id')
-        #     user = request.user
-        #     if request.method == 'POST':
-        #         serializer = serializers.ShoppingCartSerializer(
-        #             data={'user': user.id, 'recipe': id_recipe}
-        #         )
-        #         if serializer.is_valid():
-        #             serializer.save()
-        #             return Response(
-        #                 serializer.data, status=status.HTTP_201_CREATED)
-        #         return Response(
-        #             serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        #     if (
-        #         not models.ShoppingCart.objects.filter(
-        #             user=user.id, recipe=id_recipe).exists()
-        #     ):
-        #         return Response(
-        #             {'errors': 'Рецепт отсутствует в списке покупок.'},
-        #             status=status.HTTP_400_BAD_REQUEST,
-        #         )
-        #     models.ShoppingCart.objects.filter(
-        #         user=user.id, recipe=id_recipe).delete()
-        #     return Response(
-        #         {'detail': 'Рецепт удалён из списка покупок.'},
-        #         status=status.HTTP_204_NO_CONTENT,
-        #     )
-        # return Response(
-        #         {'detail': 'Неверный id'},
-        #         status=status.HTTP_404_NOT_FOUND
-        # )
-
-    @action(detail=False)
+    @action(
+        detail=False,
+        permission_classes=[IsAuthenticated]
+    )
     def download_shopping_cart(self, request):
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
