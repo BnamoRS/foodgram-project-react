@@ -85,40 +85,35 @@ class UserViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, pk):
-        if request.user.is_authenticated:
-            if (
-                models.Subscription.objects.filter(
-                    author=pk, follower=self.request.user).exists()
-            ):
-                if request.method == 'DELETE':
-                    models.Subscription.objects.filter(
-                        author=pk, follower=self.request.user).delete()
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-                return Response(
-                    {'errors': 'Подписка уже существует.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif request.user.id == int(pk):
-                return Response(
-                    {'errors': 'Подписка на себя невозможна.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif models.User.objects.filter(id=pk).exists():
-                author = models.User.objects.filter(id=pk).annotate(
-                    recipes_count=Count('recipes')).first()
-                models.Subscription.objects.create(
-                    author=author, follower=self.request.user)
-                serializer = serializers.SubscriptionSerializer(
-                    author, context={'request': request})
-                return Response(
-                    serializer.data, status=status.HTTP_201_CREATED)
+        if request.method == 'DELETE':
+            models.Subscription.objects.filter(
+                author=pk, follower=self.request.user).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if (
+            models.Subscription.objects.filter(
+                author=pk, follower=self.request.user).exists()
+        ):
             return Response(
-                {'detail': 'Пользователь не существует.'},
+                {'errors': 'Подписка уже существует.'},
                 status=status.HTTP_400_BAD_REQUEST
-                )
+            )
+        if request.user.id == int(pk):
+            return Response(
+                {'errors': 'Подписка на себя невозможна.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if models.User.objects.filter(id=pk).exists():
+            author = models.User.objects.filter(id=pk).annotate(
+                recipes_count=Count('recipes')).first()
+            models.Subscription.objects.create(
+                author=author, follower=self.request.user)
+            serializer = serializers.SubscriptionSerializer(
+                author, context={'request': request})
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED)
         return Response(
-            {'detail': 'Пользователь не авторизован.'},
-            status=status.HTTP_401_UNAUTHORIZED
+            {'detail': 'Пользователь не существует.'},
+            status=status.HTTP_400_BAD_REQUEST
             )
 
 
@@ -165,14 +160,14 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk):
+        if request.method == 'DELETE':
+            models.Favorite.objects.filter(
+                recipe=pk, user=self.request.user).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         if (
             models.Favorite.objects.filter(
                 recipe=pk, user=self.request.user).exists()
         ):
-            if request.method == 'DELETE':
-                models.Favorite.objects.filter(
-                    recipe=pk, user=self.request.user).delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
                 {'errors': 'Рецепт уже в избранном.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -196,14 +191,14 @@ class RecipeViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk):
+        if request.method == 'DELETE':
+            models.ShoppingCart.objects.filter(
+                recipe=pk, user=self.request.user).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         if (
             models.ShoppingCart.objects.filter(
                 recipe=pk, user=self.request.user).exists()
         ):
-            if request.method == 'DELETE':
-                models.ShoppingCart.objects.filter(
-                    recipe=pk, user=self.request.user).delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
                 {'errors': 'Рецепт уже в покупках.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -221,13 +216,8 @@ class RecipeViewSet(ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(
-        detail=False,
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=False)
     def download_shopping_cart(self, request):
-        if not request.user.is_authenticated:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
         user_id = request.user.id
         ingredients = models.Ingredient.objects.filter(
             recipe_ingredients__recipe_id__shopping_cart_recipes__user=user_id

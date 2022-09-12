@@ -277,6 +277,7 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
         instance.save()
+        models.RecipeIngredient.objects.filter(recipe=instance.id).delete()
         for ingredient in ingredients:
             id_ingredient = ingredient.get('id')
             if not models.Ingredient.objects.filter(id=id_ingredient).exists():
@@ -293,6 +294,7 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
                     ingredient=ingredient_obj,
                     amount=amount_ingredient,
                 )
+        models.RecipeTag.objects.filter(recipe=instance).delete()
         for tag in tags:
             if not models.Tag.objects.filter(id=tag).exists():
                 raise exceptions.ParseError(detail='Тег не найден.')
