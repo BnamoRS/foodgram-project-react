@@ -1,10 +1,9 @@
 from django.contrib import admin
-from django.contrib.auth import get_user_model
+
+from users.models import User
 
 
-User = get_user_model()
-
-
+@admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'username', 'password', 'email', 'first_name', 'last_name')
@@ -12,6 +11,3 @@ class UserAdmin(admin.ModelAdmin):
     list_editable = (
         'username', 'password', 'email', 'first_name', 'last_name',
     )
-
-
-admin.site.register(User, UserAdmin)

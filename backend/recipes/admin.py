@@ -15,6 +15,7 @@ class IngredientInLine(admin.TabularInline):
     search_fields = ('name',)
 
 
+@admin.register(models.Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     inlines = (RecipeTagInLine, IngredientInLine)
     list_display = (
@@ -28,6 +29,7 @@ class RecipeAdmin(admin.ModelAdmin):
     empty_value_display = '--пусто--'
 
 
+@admin.register(models.Tag)
 class TagAdmin(admin.ModelAdmin):
     inlines = (RecipeTagInLine,)
     list_display = ('id', 'name', 'color', 'slug')
@@ -35,17 +37,13 @@ class TagAdmin(admin.ModelAdmin):
     list_editable = ('name', 'color', 'slug')
 
 
+@admin.register(models.Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     inlines = (IngredientInLine,)
     list_display = ('id', 'name', 'measurement_unit')
     search_fields = ('name',)
 
 
+@admin.register(models.Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ('follower', 'author')
-
-
-admin.site.register(models.Recipe, RecipeAdmin)
-admin.site.register(models.Tag, TagAdmin)
-admin.site.register(models.Ingredient, IngredientAdmin)
-admin.site.register(models.Subscription, SubscriptionAdmin)

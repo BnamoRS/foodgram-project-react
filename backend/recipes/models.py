@@ -1,8 +1,6 @@
-from django.contrib.auth import get_user_model
 from django.db import models
 
-
-User = get_user_model()
+from users.models import User
 
 
 class Recipe(models.Model):
@@ -48,7 +46,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
 
 
 class Tag(models.Model):
@@ -72,7 +70,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -90,13 +88,13 @@ class Ingredient(models.Model):
         verbose_name='Единицы измерения',
     )
 
-    def __str__(self):
-        return f'{self.name}, {self.measurement_unit}'
-
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        ordering = ['id']
+        ordering = ('id',)
+
+    def __str__(self):
+        return f'{self.name}, {self.measurement_unit}'
 
 
 class RecipeIngredient(models.Model):

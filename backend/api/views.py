@@ -8,7 +8,7 @@ from rest_framework.viewsets import (
                                      ModelViewSet,
                                      ReadOnlyModelViewSet,
                                      )
-from rest_framework.permissions import (AllowAny,
+from rest_framework.permissions import (
                                         IsAuthenticated,
                                         IsAuthenticatedOrReadOnly,
                                         SAFE_METHODS
