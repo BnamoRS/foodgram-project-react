@@ -10,11 +10,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='recipe',
-            name='cooking_time',
-            field=models.PositiveIntegerField(verbose_name='Время приготовления, мин'),
-        ),
+        # migrations.AlterField(
+        #     model_name='recipe',
+        #     name='cooking_time',
+        #     field=models.PositiveIntegerField(verbose_name='Время приготовления, мин'),
+        # ),
         migrations.AlterField(
             model_name='recipe',
             name='name',

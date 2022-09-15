@@ -1,4 +1,6 @@
-python manage.py migrate
-python manage.py collectstatic --no-input
-python manage.py loaddata data.json
+#!/bin/sh
 gunicorn foodgram.wsgi:application --bind 0:8000
+sleep 15
+python manage.py migrate --no-input
+python manage.py collectstatic --no-input
+exit

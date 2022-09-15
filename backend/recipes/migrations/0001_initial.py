@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=64, verbose_name='Название рецепта')),
                 ('image', models.ImageField(upload_to='', verbose_name='Фото рецепта')),
                 ('description', models.TextField(max_length=200, verbose_name='Описание рецепта')),
-                ('cooking_time', models.TimeField(verbose_name='Время приготовления, мин')),
+                ('cooking_time', models.PositiveIntegerField(verbose_name='Время приготовления, мин')),
                 ('pub_date', models.DateTimeField(auto_now_add=True, verbose_name='Дата публикации')),
             ],
         ),

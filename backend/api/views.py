@@ -8,7 +8,8 @@ from rest_framework.viewsets import (
                                      ModelViewSet,
                                      ReadOnlyModelViewSet,
                                      )
-from rest_framework.permissions import (IsAuthenticated,
+from rest_framework.permissions import (AllowAny,
+                                        IsAuthenticated,
                                         IsAuthenticatedOrReadOnly,
                                         SAFE_METHODS
                                         )
@@ -23,12 +24,25 @@ class UserViewSet(ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     pagination_class = paginators.CustomPageNumberPaginator
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    # permission_classes = [AllowAny]
 
     def get_serializer_class(self):
         if self.action == 'create':
             return serializers.UserCreateSerializer
         return serializers.UserSerializer
+
+    def get_permissions(self):
+        if (
+            self.action == 'list' or
+            self.action == 'retrive' or
+            self.action == 'create'
+        ):
+            permission_classes = (IsAuthenticatedOrReadOnly,)
+        elif self.action == 'delete':
+            permission_classes = (IsAuthor,)
+        else:
+            permission_classes = (IsAuthenticated,)
+        return (permission() for permission in permission_classes)
 
     @action(detail=False, url_path='me', permission_classes=[IsAuthenticated])
     def get_me(self, request):
@@ -135,6 +149,7 @@ class RecipeViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     pagination_class = paginators.CustomPageNumberPaginator
+    # permission_classes = (AllowAny,)
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
@@ -145,7 +160,8 @@ class RecipeViewSet(ModelViewSet):
         if (
             self.action == 'favorite' or
             self.action == 'shopping_cart' or
-            self.action == 'download_shopping_cart'
+            self.action == 'download_shopping_cart' or
+            self.action == 'create'
         ):
             permission_classes = [IsAuthenticated]
         elif self.request.method in SAFE_METHODS:
