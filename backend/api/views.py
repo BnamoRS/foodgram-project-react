@@ -83,10 +83,10 @@ class UserViewSet(ModelViewSet):
             )
             return self.get_paginated_response(serializer.data)
         serializer = serializers.SubscriptionSerializer(
-                queryset,
-                context={'request': request},
-                many=True,
-            )
+            queryset,
+            context={'request': request},
+            many=True,
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
@@ -124,7 +124,7 @@ class UserViewSet(ModelViewSet):
         return Response(
             {'detail': 'Пользователь не существует.'},
             status=status.HTTP_400_BAD_REQUEST
-            )
+        )
 
 
 class TagViewSet(ReadOnlyModelViewSet):

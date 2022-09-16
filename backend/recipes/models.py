@@ -9,18 +9,18 @@ class Recipe(models.Model):
         'Ingredient',
         through='RecipeIngredient',
         verbose_name=' Ингридиенты',
-        )
+    )
     tags = models.ManyToManyField(
         'Tag',
         through='RecipeTag',
         verbose_name='Тег',
-        )
+    )
     image = models.ImageField(
         upload_to='recipe/images/',
         null=True,
         default=None,
         verbose_name='Фото рецепта',
-        )
+    )
     name = models.CharField(
         unique=True,
         max_length=200,
