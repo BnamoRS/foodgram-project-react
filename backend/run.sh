@@ -1,6 +1,3 @@
 #!/bin/sh
-gunicorn foodgram.wsgi:application --bind 0:8000
-sleep 15
-python manage.py migrate --no-input
-python manage.py collectstatic --no-input
-exit
+
+echo python manage.py migrate --no-input
