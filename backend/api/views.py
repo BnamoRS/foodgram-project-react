@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Count, Sum
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
@@ -31,13 +32,9 @@ class UserViewSet(ModelViewSet):
         return serializers.UserSerializer
 
     def get_permissions(self):
-        if (
-            self.action == 'list' or
-            self.action == 'retrive' or
-            self.action == 'create'
-        ):
+        if self.action in settings.USER_ACTIONS_IS_AUTHENTICATED:
             permission_classes = (IsAuthenticatedOrReadOnly,)
-        elif self.action == 'delete':
+        elif self.action in settings.USER_ACTIONS_IS_AUTHOR:
             permission_classes = (IsAuthor,)
         else:
             permission_classes = (IsAuthenticated,)
@@ -155,12 +152,7 @@ class RecipeViewSet(ModelViewSet):
         return serializers.RecipeCreateUpdateSerializer
 
     def get_permissions(self):
-        if (
-            self.action == 'favorite' or
-            self.action == 'shopping_cart' or
-            self.action == 'download_shopping_cart' or
-            self.action == 'create'
-        ):
+        if self.action in settings.RECIPE_ACTIONS_IS_AUTHENTICATED:
             permission_classes = (IsAuthenticated,)
         elif self.request.method in SAFE_METHODS:
             permission_classes = (IsAuthenticatedOrReadOnly,)

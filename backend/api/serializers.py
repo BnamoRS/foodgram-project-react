@@ -1,4 +1,3 @@
-from ast import In
 import base64
 
 from django.core.files.base import ContentFile
@@ -291,22 +290,7 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data, author=author)
         self._add_ingredients(ingredients, recipe)
-        # for ingredient in ingredients:
-        #     id_ingredient = ingredient.get('id')
-        #     if not Ingredient.objects.filter(id=id_ingredient).exists():
-        #         raise exceptions.ParseError(detail='Игредиент не найден.')
-        #     ingredient_obj = Ingredient.objects.get(id=id_ingredient)
-        #     amount_ingredient = ingredient.get('amount')
-        #     RecipeIngredient.objects.create(
-        #         recipe=recipe,
-        #         ingredient=ingredient_obj,
-        #         amount=amount_ingredient,
-        #     )
-        for tag in tags:
-            if not Tag.objects.filter(id=tag).exists():
-                raise exceptions.ParseError(detail='Тег не найден.')
-            current_tag = Tag.objects.get(id=tag)
-            RecipeTag.objects.create(recipe=recipe, tag=current_tag)
+        self._add_tags(tags, recipe)
         return recipe
 
     def update(self, instance, validated_data):
@@ -320,34 +304,8 @@ class RecipeCreateUpdateSerializer(ModelSerializer):
         instance.save()
         RecipeIngredient.objects.filter(recipe=instance.id).delete()
         self._add_ingredients(ingredients, instance)
-        # for ingredient in ingredients:
-        #     id_ingredient = ingredient.get('id')
-        #     if not Ingredient.objects.filter(id=id_ingredient).exists():
-        #         raise exceptions.ParseError(detail='Игредиент не найден.')
-        #     elif (
-        #         not RecipeIngredient.objects.filter(
-        #             ingredient=id_ingredient, recipe=instance.id).exists()
-        #     ):
-        #         ingredient_obj = Ingredient.objects.get(
-        #             id=id_ingredient)
-        #         amount_ingredient = ingredient.get('amount')
-        #         RecipeIngredient.objects.create(
-        #             recipe=instance,
-        #             ingredient=ingredient_obj,
-        #             amount=amount_ingredient,
-        #         )
         RecipeTag.objects.filter(recipe=instance).delete()
         self._add_tags(tags, instance)
-        # for tag in tags:
-        #     if not Tag.objects.filter(id=tag).exists():
-        #         raise exceptions.ParseError(detail='Тег не найден.')
-        #     elif (
-        #         not RecipeTag.objects.filter(
-        #             recipe=instance, tag=tag).exists()
-        #     ):
-        #         current_tag = Tag.objects.get(id=tag)
-        #         RecipeTag.objects.create(
-        #             recipe=instance, tag=current_tag)
         return instance
 
 
