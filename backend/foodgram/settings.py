@@ -126,7 +126,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-USER_ACTIONS_IS_AUTHENTICATED = ('list', 'retrive', 'create')
+USER_ACTIONS_ALLOW_ANY = ('list', 'retrive', 'create')
 USER_ACTIONS_IS_AUTHOR = ('delete',)
 RECIPE_ACTIONS_IS_AUTHENTICATED = (
     'favorite', 'shopping_cart', 'download_shopping_cart', 'create')

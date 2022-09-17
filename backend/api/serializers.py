@@ -48,9 +48,10 @@ class UserSerializer(ModelSerializer):
 
     def get_is_subscribed(self, obj):
         request_user = self.context.get('request').user
-        if request_user.is_authenticated:
-            return obj.following.filter(follower=request_user).exists()
-        return False
+        return (
+            request_user.is_authenticated
+            and obj.following.filter(follower=request_user).exists()
+        )
 
 
 class SetPasswordSerializer(ModelSerializer):
@@ -161,9 +162,10 @@ class RecipeSerializer(ModelSerializer):
 
     def _get_is_in_model(self, obj, model):
         request_user = self.context.get('request').user
-        if request_user.is_authenticated:
-            return model.objects.filter(
-                user=request_user, recipe=obj).exists()
+        return (
+            request_user.is_authenticated
+            and model.objects.filter(user=request_user, recipe=obj).exists()
+        )
 
     def get_is_favorited(self, obj):
         return self._get_is_in_model(obj, Favorite)

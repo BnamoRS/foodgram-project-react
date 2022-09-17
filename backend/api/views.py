@@ -10,6 +10,7 @@ from rest_framework.viewsets import (
                                      ReadOnlyModelViewSet,
                                      )
 from rest_framework.permissions import (
+                                        AllowAny,
                                         IsAuthenticated,
                                         IsAuthenticatedOrReadOnly,
                                         SAFE_METHODS
@@ -32,8 +33,8 @@ class UserViewSet(ModelViewSet):
         return serializers.UserSerializer
 
     def get_permissions(self):
-        if self.action in settings.USER_ACTIONS_IS_AUTHENTICATED:
-            permission_classes = (IsAuthenticatedOrReadOnly,)
+        if self.action in settings.USER_ACTIONS_ALLOW_ANY:
+            permission_classes = (AllowAny,)
         elif self.action in settings.USER_ACTIONS_IS_AUTHOR:
             permission_classes = (IsAuthor,)
         else:
