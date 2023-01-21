@@ -13,13 +13,6 @@
 - при успешном прохождении всех этапов отправляется сообщение в Telegram.
 
 
-Проект доступен по адресу [Foodgram](http://158.160.11.231/)
-
-
-- **IP адрес**, по которому доступна [панель администратора](http://158.160.11.231/admin/ "Вход в панель администратора проекта")
-
-   
-
 ## Зависимости:
 
 - asgiref==3.5.2
@@ -90,22 +83,39 @@
 	sudo docker-compose up -d
 	```
 - войти в терминал контейнера:
-		`sudo docker exec -it bnamors_web_1 bash`
+		```sudo docker exec -it infra_web_1 bash```
 	- выполнить команды:
 		```
 		python manage.py migrate
-		python manage.py collectstatic
-        ```
+		```
 - создать суперпользователя комндой:
 		```
 		python manage.py createsuperuser
 		```
-	- выйти из терминала командой:
+- можно загрузить тестовую базу данных:
+
+	- войти в терминал django:
 		```
-		exit
+		python3 manage.py shell
+		```
+	- выполнить в открывшемся терминале django:
+		```
+		>>> from django.contrib.contenttypes.models import ContentType
+		>>> ContentType.objects.all().delete()
+		>>> quit()
+		```
+	- загрузить тестовую базу данных:
+		```
+		python manage.py loaddata data.json
 		```
 
-Сайт будет доступен по адресу: `http://localhost/`
+	- выйти из терминала контейнера командой:
+		```
+		exit
+
+		```
+
+Сайт **FOODGRAM** будет доступен по адресу: `http://localhost/`
 
 ## Автор:
 
