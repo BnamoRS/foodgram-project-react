@@ -77,7 +77,7 @@
 
 - Установить `docker` и `docker-compose`;
 - клонировать репозиторий;
-- в директории  `.../foodgram-project-react/backend/` создать файл `.env` с переменными окружения;
+- в директории  `.../foodgram-project-react/backend/foodgram/` создать файл `.env` с переменными окружения;
 - из директории `.../foodgram-project-react/infra/` выполнить команду:
 	```
 	sudo docker-compose up -d
